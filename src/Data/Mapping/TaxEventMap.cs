@@ -12,6 +12,10 @@ namespace Data.Mapping
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Id).HasColumnName("id_tax_event");
 
+            builder.Property(e => e.AlreadyInKafka)
+                .HasColumnName("st_already_in_kafka")
+                .HasDefaultValue(false);
+
             builder.Property(e => e.CustomerId)
                 .HasColumnName("id_customer");
 

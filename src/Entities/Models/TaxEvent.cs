@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.Eventing.Reader;
 
 public class TaxEvent
 {
@@ -15,6 +16,7 @@ public class TaxEvent
 
     public TaxType Type { get; private set; }
 
+    public bool AlreadyInKafka {get; private set;}
     public Customer? Customer { get; private set; }
 
     // EF
