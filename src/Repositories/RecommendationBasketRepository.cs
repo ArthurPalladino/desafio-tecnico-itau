@@ -5,9 +5,11 @@ using Repositories.Interfaces;
 
 public class RecommendationBasketRepository(ItauTopFiveDbContext dbContext) : Repository<RecommendationBasket>(dbContext), IRecommendationBasketRepository
 {
-    public async Task<RecommendationBasket?> GetActiveBasketAsync()
+    public async Task<RecommendationBasket?> GetActiveBasketWithItemsAsync()
     {
-        return await _dbSet.Where(c => c.IsActive).FirstOrDefaultAsync(); 
+        return await _dbSet
+        .Include(b => b.Items)
+        .FirstOrDefaultAsync(b => b.IsActive);
     }
 
 }

@@ -4,5 +4,6 @@ namespace Repositories.Interfaces
     {
 
         Task<IEnumerable<Customer>> GetActiveCustomers();
+        Task<Customer?> GetCustomerWithPortfolioAsync(int customerId);
     }
 }

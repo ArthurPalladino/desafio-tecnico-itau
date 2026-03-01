@@ -9,4 +9,12 @@ public class CustomerRepository(ItauTopFiveDbContext dbContext) : Repository<Cus
     {
         return await _dbSet.Where(c => c.IsActive).ToListAsync();    
     }
+
+    public async Task<Customer?> GetCustomerWithPortfolioAsync(int customerId)
+{
+    return await _dbSet
+        .Include(c => c.TradingAccount)         
+        .ThenInclude(a => a.Custodies)      
+        .FirstOrDefaultAsync(c => c.Id == customerId);
+}
 }

@@ -2,6 +2,6 @@ namespace Repositories.Interfaces
 {
     public interface IRecommendationBasketRepository : IRepository<RecommendationBasket>
     {
-        Task<RecommendationBasket?> GetActiveBasketAsync();
+        Task<RecommendationBasket?> GetActiveBasketWithItemsAsync();
     }
 }

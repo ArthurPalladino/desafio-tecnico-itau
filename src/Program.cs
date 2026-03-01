@@ -1,7 +1,25 @@
 using Data;
 using Microsoft.EntityFrameworkCore;
+using Repositories.Generic;
+using Repositories.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// generic repository
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
+// specific repositories
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ITickerRepository, TickerRepository>();
+builder.Services.AddScoped<IRecommendationBasketRepository, RecommendationBasketRepository>();
+builder.Services.AddScoped<ITradingAccountRepository, TradingAccountRepository>();
+builder.Services.AddScoped<ICustodyRepository, CustodyRepository>();
+builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+builder.Services.AddScoped<IDistributionRepository, DistributionRepository>();
+builder.Services.AddScoped<ITaxEventRepository, TaxEventRepository>();
+builder.Services.AddScoped<IRebalancingRepository, RebalancingRepository>();
+
 
 // Add services to the container.
 
