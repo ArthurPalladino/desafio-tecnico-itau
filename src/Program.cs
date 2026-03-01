@@ -21,6 +21,10 @@ builder.Services.AddScoped<ITaxEventRepository, TaxEventRepository>();
 builder.Services.AddScoped<IRebalancingRepository, RebalancingRepository>();
 
 
+
+builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
+
+
 // Add services to the container.
 
 builder.Services.AddControllers();
