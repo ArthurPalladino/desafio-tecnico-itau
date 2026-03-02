@@ -20,6 +20,7 @@ builder.Services.AddScoped<IRebalancingRepository, RebalancingRepository>();
 
 //SERVICES
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IBasketService, BasketService>();
 
 
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();

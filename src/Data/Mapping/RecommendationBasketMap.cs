@@ -31,11 +31,10 @@ namespace Data.Mapping
 
 
             builder.HasMany(b => b.Items)
-                .WithOne()
-                .HasForeignKey("id_basket") 
-                .OnDelete(DeleteBehavior.Cascade);
+            .WithOne()
+            .HasForeignKey(ci => ci.RecommendationBasketId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            // Acesso ao campo privado (opcional, mas bom para DDD)
             var navigation = builder.Metadata.FindNavigation(nameof(RecommendationBasket.Items));
             navigation?.SetPropertyAccessMode(PropertyAccessMode.Field);
         }
