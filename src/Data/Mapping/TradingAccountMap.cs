@@ -6,7 +6,7 @@ namespace Data.Mapping
     public class TradingAccountMap : IEntityTypeConfiguration<TradingAccount>
     {
         public void Configure(EntityTypeBuilder<TradingAccount> builder)
-        {
+        {   
             builder.ToTable("tb_trading_accounts");
 
             builder.HasKey(c => c.Id);
@@ -15,14 +15,20 @@ namespace Data.Mapping
             builder.Property(c => c.CustomerId)
                 .HasColumnName("id_customer");
 
-            builder.Property(c => c.Description)
+            builder.HasOne(t => t.Customer)
+                .WithOne(c => c.TradingAccount) 
+                .HasForeignKey<TradingAccount>(t => t.CustomerId)
                 .IsRequired()
-                .HasMaxLength(100)
-                .HasColumnName("st_description");
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Property(c => c.AccountNumber)
+            .IsRequired()
+            .HasMaxLength(20)
+            .HasColumnName("st_account_number");
 
             builder.Property(c => c.Type)
                 .HasColumnName("tp_account_type");
-
+            
             builder.HasMany(c => c.Custodies)
                 .WithOne()
                 .HasForeignKey(cd => cd.TradingAccountId)

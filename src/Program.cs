@@ -5,11 +5,9 @@ using Repositories.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-// generic repository
+//REPOSITÓRIOS
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
-// specific repositories
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ITickerRepository, TickerRepository>();
 builder.Services.AddScoped<IRecommendationBasketRepository, RecommendationBasketRepository>();
@@ -20,12 +18,13 @@ builder.Services.AddScoped<IDistributionRepository, DistributionRepository>();
 builder.Services.AddScoped<ITaxEventRepository, TaxEventRepository>();
 builder.Services.AddScoped<IRebalancingRepository, RebalancingRepository>();
 
+//SERVICES
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
 
 
-// Add services to the container.
 
 builder.Services.AddControllers();
 
@@ -33,11 +32,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ItauTopFiveDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-
-//builder.Services.AddSingleton<Application.Services.IKafkaProducer, Application.Services.KafkaProducer>();
-// builder.Services.AddScoped<Application.Services.IIrEventService, Application.Services.IrEventService>();
-
-
 
 
 

@@ -43,5 +43,10 @@ namespace Repositories.Generic
         {
             return await _context.SaveChangesAsync();
         }
+
+        public async Task AddRangeAsync(IEnumerable<T> entities)
+        {
+            await _context.AddRangeAsync(entities);
+        }
     }
 }

@@ -23,11 +23,9 @@ namespace Data.Mapping
                 .HasColumnType("DECIMAL(10,2)")
                 .HasColumnName("vl_current_price");
 
-            builder.Property(t => t.CreatedAt)
-                .HasColumnName("dt_created_at");
+            builder.Property(t => t.PriceDate)
+                .HasColumnName("dt_price_date");
 
-            builder.Property(t => t.UpdatedAt)
-                .HasColumnName("dt_updated_at");
         }
     }
 }

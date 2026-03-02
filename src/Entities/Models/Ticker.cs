@@ -11,14 +11,12 @@ public class Ticker
 
     public decimal CurrentPrice { get; private set; }
 
-    public DateTime CreatedAt { get; private set; }
 
-    public DateTime UpdatedAt { get; private set; }
-
+    public DateTime PriceDate {get; private set;}
     // EF only
     protected Ticker() { }
 
-    public Ticker(string symbol, decimal currentPrice)
+    public Ticker(string symbol, decimal currentPrice, DateTime date)
     {
         if (string.IsNullOrWhiteSpace(symbol))
             throw new ArgumentException("O símbolo do ativo (ticker) não pode estar vazio.", nameof(symbol));
@@ -28,17 +26,14 @@ public class Ticker
 
         Symbol = symbol.Trim().ToUpperInvariant();
         CurrentPrice = currentPrice;
-        var now = DateTime.Now;
-        CreatedAt = now;
-        UpdatedAt = now;
+        PriceDate = date;
     }
 
-    public void UpdatePrice(decimal newPrice)
-    {
-        if (newPrice < 0)
-            throw new ArgumentOutOfRangeException(nameof(newPrice), "O preço não pode ser negativo.");
+    // public void UpdatePrice(decimal newPrice)
+    // {
+    //     if (newPrice < 0)
+    //         throw new ArgumentOutOfRangeException(nameof(newPrice), "O preço não pode ser negativo.");
 
-        CurrentPrice = newPrice;
-        UpdatedAt = DateTime.Now;
-    }
+    //     CurrentPrice = newPrice;
+    // }
 }

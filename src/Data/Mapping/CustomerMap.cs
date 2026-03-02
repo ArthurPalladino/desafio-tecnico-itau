@@ -41,16 +41,6 @@ namespace Data.Mapping
                 .IsUnique()
                 .HasDatabaseName("ix_customer_cpf");
 
-            
-            builder.HasOne(c => c.TradingAccount)
-                .WithOne()
-                .HasForeignKey<TradingAccount>(cg => cg.CustomerId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(c => c.Custodies)
-                .WithOne()
-                .HasForeignKey(cd => cd.CustomerId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

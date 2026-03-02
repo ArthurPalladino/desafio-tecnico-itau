@@ -10,6 +10,11 @@ public class CustomerRepository(ItauTopFiveDbContext dbContext) : Repository<Cus
         return await _dbSet.Where(c => c.IsActive).ToListAsync();    
     }
 
+    public async Task<Customer?> GetCustomerByCpf(string cpf)
+    {
+        return await _dbSet.FirstOrDefaultAsync(c => c.Cpf == cpf);   
+    }
+
     public async Task<Customer?> GetCustomerWithPortfolioAsync(int customerId)
 {
     return await _dbSet

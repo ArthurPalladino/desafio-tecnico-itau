@@ -7,7 +7,7 @@ public class TradingAccount
 
     public int CustomerId { get; private set; }
 
-    public string Description { get; private set; } = string.Empty;
+    public string AccountNumber { get; private set; } = string.Empty;
 
     public AccountType Type { get; private set; }
     
@@ -17,24 +17,18 @@ public class TradingAccount
     // EF ctor
     protected TradingAccount() { }
 
-    public TradingAccount(int customerId, string description, AccountType type)
+    public TradingAccount(Customer customer, AccountType type)
     {
-        if (customerId <= 0)
-            throw new ArgumentException("O ID do cliente é inválido.", nameof(customerId));
+        if (customer == null)
+            throw new ArgumentNullException(nameof(customer), "O cliente é obrigatório.");
 
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException("A descrição da conta é obrigatória.", nameof(description));
-
-        CustomerId = customerId;
-        Description = description;
+        Customer = customer;
+        AccountNumber = GenerateAccountNumber();
         Type = type;
     }
 
-    public void UpdateDescription(string newDescription)
+    private string GenerateAccountNumber() 
     {
-        if (string.IsNullOrWhiteSpace(newDescription))
-            throw new ArgumentException("A descrição não pode estar vazia.", nameof(newDescription));
-            
-        Description = newDescription;
+        return new Random().Next(100000, 999999).ToString() + "-1";
     }
 }

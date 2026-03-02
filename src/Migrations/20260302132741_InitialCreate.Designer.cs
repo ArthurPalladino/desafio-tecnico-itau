@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ItauTopFive.Migrations
 {
     [DbContext(typeof(ItauTopFiveDbContext))]
-    [Migration("20260301140710_InitialCreate")]
+    [Migration("20260302132741_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -76,8 +76,7 @@ namespace ItauTopFive.Migrations
                         .HasColumnName("vl_average_price");
 
                     b.Property<int>("CustomerId")
-                        .HasColumnType("int")
-                        .HasColumnName("id_customer");
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int")
@@ -310,6 +309,12 @@ namespace ItauTopFive.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("AlreadyInKafka")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false)
+                        .HasColumnName("st_already_in_kafka");
+
                     b.Property<decimal>("BaseAmount")
                         .HasColumnType("DECIMAL(10,2)")
                         .HasColumnName("vl_base_amount");
@@ -346,23 +351,19 @@ namespace ItauTopFive.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("dt_created_at");
-
                     b.Property<decimal>("CurrentPrice")
                         .HasColumnType("DECIMAL(10,2)")
                         .HasColumnName("vl_current_price");
+
+                    b.Property<DateTime>("PriceDate")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("dt_price_date");
 
                     b.Property<string>("Symbol")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)")
                         .HasColumnName("st_symbol");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("dt_updated_at");
 
                     b.HasKey("Id");
 
@@ -378,18 +379,15 @@ namespace ItauTopFive.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("st_account_number");
+
                     b.Property<int>("CustomerId")
                         .HasColumnType("int")
                         .HasColumnName("id_customer");
-
-                    b.Property<int>("CustomerId1")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("st_description");
 
                     b.Property<int>("Type")
                         .HasColumnType("int")
@@ -399,8 +397,6 @@ namespace ItauTopFive.Migrations
 
                     b.HasIndex("CustomerId")
                         .IsUnique();
-
-                    b.HasIndex("CustomerId1");
 
                     b.ToTable("tb_trading_accounts", (string)null);
                 });
@@ -419,7 +415,7 @@ namespace ItauTopFive.Migrations
                     b.HasOne("Customer", null)
                         .WithMany("Custodies")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("TradingAccount", null)
@@ -442,15 +438,9 @@ namespace ItauTopFive.Migrations
 
             modelBuilder.Entity("TradingAccount", b =>
                 {
-                    b.HasOne("Customer", null)
+                    b.HasOne("Customer", "Customer")
                         .WithOne("TradingAccount")
                         .HasForeignKey("TradingAccount", "CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

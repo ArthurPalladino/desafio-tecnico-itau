@@ -12,9 +12,6 @@ namespace Data.Mapping
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Id).HasColumnName("id_custody");
 
-            builder.Property(c => c.CustomerId)
-                .HasColumnName("id_customer");
-
             builder.Property(c => c.TradingAccountId)
                 .HasColumnName("id_trading_account");
 

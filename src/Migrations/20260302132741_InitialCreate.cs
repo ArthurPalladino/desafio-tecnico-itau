@@ -125,8 +125,7 @@ namespace ItauTopFive.Migrations
                     st_symbol = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     vl_current_price = table.Column<decimal>(type: "DECIMAL(10,2)", nullable: false),
-                    dt_created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    dt_updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    dt_price_date = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -144,7 +143,8 @@ namespace ItauTopFive.Migrations
                     vl_base_amount = table.Column<decimal>(type: "DECIMAL(10,2)", nullable: false),
                     vl_tax_amount = table.Column<decimal>(type: "DECIMAL(10,2)", nullable: false),
                     dt_event_date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    tp_tax_type = table.Column<int>(type: "int", nullable: false)
+                    tp_tax_type = table.Column<int>(type: "int", nullable: false),
+                    st_already_in_kafka = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -165,20 +165,13 @@ namespace ItauTopFive.Migrations
                     id_trading_account = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     id_customer = table.Column<int>(type: "int", nullable: false),
-                    st_description = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                    st_account_number = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    tp_account_type = table.Column<int>(type: "int", nullable: false),
-                    CustomerId1 = table.Column<int>(type: "int", nullable: false)
+                    tp_account_type = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_tb_trading_accounts", x => x.id_trading_account);
-                    table.ForeignKey(
-                        name: "FK_tb_trading_accounts_tb_customers_CustomerId1",
-                        column: x => x.CustomerId1,
-                        principalTable: "tb_customers",
-                        principalColumn: "id_customer",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_tb_trading_accounts_tb_customers_id_customer",
                         column: x => x.id_customer,
@@ -218,7 +211,7 @@ namespace ItauTopFive.Migrations
                 {
                     id_custody = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    id_customer = table.Column<int>(type: "int", nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: false),
                     id_trading_account = table.Column<int>(type: "int", nullable: false),
                     st_symbol = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -229,11 +222,11 @@ namespace ItauTopFive.Migrations
                 {
                     table.PrimaryKey("PK_tb_custodies", x => x.id_custody);
                     table.ForeignKey(
-                        name: "FK_tb_custodies_tb_customers_id_customer",
-                        column: x => x.id_customer,
+                        name: "FK_tb_custodies_tb_customers_CustomerId",
+                        column: x => x.CustomerId,
                         principalTable: "tb_customers",
                         principalColumn: "id_customer",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_tb_custodies_tb_trading_accounts_id_trading_account",
                         column: x => x.id_trading_account,
@@ -249,9 +242,9 @@ namespace ItauTopFive.Migrations
                 column: "id_basket1");
 
             migrationBuilder.CreateIndex(
-                name: "IX_tb_custodies_id_customer",
+                name: "IX_tb_custodies_CustomerId",
                 table: "tb_custodies",
-                column: "id_customer");
+                column: "CustomerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tb_custodies_id_trading_account",
@@ -268,11 +261,6 @@ namespace ItauTopFive.Migrations
                 name: "IX_tb_tax_events_id_customer",
                 table: "tb_tax_events",
                 column: "id_customer");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_tb_trading_accounts_CustomerId1",
-                table: "tb_trading_accounts",
-                column: "CustomerId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tb_trading_accounts_id_customer",

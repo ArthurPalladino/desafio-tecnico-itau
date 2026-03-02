@@ -15,7 +15,7 @@ public class Customer
 
     public string Email { get; private set; } = string.Empty;
 
-    public bool IsActive { get; private set; }
+    public bool IsActive { get; private set; } = true;
     
     public decimal MonthlyContribution { get; private set; }
 
@@ -47,10 +47,10 @@ public class Customer
     public void UpdateContribution(decimal newContribution)
     {
         if (newContribution < 100)
-            throw new ArgumentException("Monthly contribution must be at least R$ 100.00.", nameof(newContribution));
+            throw new ArgumentException("O aporte mensal deve ser de, no mínimo, R$ 100,00.", nameof(newContribution));
         MonthlyContribution = newContribution;
     }
 
-    public void DeactivateSubscription() => IsActive = false;
-    public void ActivateSubscription() => IsActive = true;
+    public void UpdateSubscriptionState(bool state) => IsActive = state;
+   
 }
