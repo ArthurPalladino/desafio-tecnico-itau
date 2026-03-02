@@ -30,12 +30,12 @@ namespace Data.Mapping
                 .HasColumnName("dt_deactivated_at");
 
 
-            builder.HasMany(b => b.Items)
+            builder.HasMany(b => b.Itens)
             .WithOne()
             .HasForeignKey(ci => ci.RecommendationBasketId)
             .OnDelete(DeleteBehavior.Cascade);
 
-            var navigation = builder.Metadata.FindNavigation(nameof(RecommendationBasket.Items));
+            var navigation = builder.Metadata.FindNavigation(nameof(RecommendationBasket.Itens));
             navigation?.SetPropertyAccessMode(PropertyAccessMode.Field);
         }
     }

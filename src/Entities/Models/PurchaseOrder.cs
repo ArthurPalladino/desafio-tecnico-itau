@@ -26,13 +26,16 @@ public class PurchaseOrder
     public PurchaseOrder(int masterAccountId, string symbol, MarketType marketType, int quantity, decimal unitPrice)
     {
         if (masterAccountId <= 0) 
-            throw new ArgumentException("A conta master informada é inválida.", nameof(masterAccountId));
+            throw new CustomException("CONTA_MASTER_INVALIDA");
+
         if (string.IsNullOrWhiteSpace(symbol)) 
-            throw new ArgumentException("O símbolo do ativo (ticker) é obrigatório.", nameof(symbol));
+            throw new CustomException("TICKER_OBRIGATORIO");
+
         if (quantity <= 0) 
-            throw new ArgumentOutOfRangeException(nameof(quantity), "A quantidade deve ser um valor positivo.");
+            throw new CustomException("QUANTIDADE_NEGATIVA");
+
         if (unitPrice < 0) 
-            throw new ArgumentOutOfRangeException(nameof(unitPrice), "O preço de execução não pode ser negativo.");
+            throw new CustomException("PRECO_NEGATIVO");
 
         MasterAccountId = masterAccountId;
         Symbol = symbol.Trim().ToUpperInvariant();

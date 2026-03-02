@@ -13,7 +13,7 @@ namespace Data
         public DbSet<TradingAccount> TradingAccounts { get; set; } = null!;
         public DbSet<Ticker> Tickers { get; set; } = null!; 
         public DbSet<RecommendationBasket> RecommendationBaskets { get; set; } = null!;
-        public DbSet<BasketItem> BasketItems { get; set; } = null!;
+        public DbSet<BasketItem> BasketItens { get; set; } = null!;
         public DbSet<Custody> Custodies { get; set; } = null!;
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; } = null!;
         public DbSet<Distribution> Distributions { get; set; } = null!;

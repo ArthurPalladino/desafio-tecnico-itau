@@ -1,0 +1,43 @@
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Threading.Tasks;
+
+public class ExceptionHandlingMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public ExceptionHandlingMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (CustomException ex)
+        {
+            context.Response.StatusCode = ex.StatusCode;
+            context.Response.ContentType = "application/json";
+
+            var response = new 
+            { 
+                erro = ex.Message, 
+                codigo = ex.Code 
+            };
+
+            await context.Response.WriteAsJsonAsync(response);
+        }
+        catch (Exception)
+        {
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsJsonAsync(new 
+            { 
+                erro = "Erro interno no servidor.", 
+                codigo = "ERRO_INTERNO" 
+            });
+        }
+    }
+}

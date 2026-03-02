@@ -7,7 +7,7 @@ namespace Data.Mapping
     {
         public void Configure(EntityTypeBuilder<BasketItem> builder)
         {
-            builder.ToTable("tb_basket_items");
+            builder.ToTable("tb_basket_itens");
 
             builder.HasKey(ci => ci.Id);
             builder.Property(ci => ci.Id)

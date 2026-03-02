@@ -24,14 +24,14 @@ public class TaxEvent
 
     public TaxEvent(int customerId, decimal baseAmount, decimal taxAmount, TaxType type)
     {
-        if (customerId <= 0) 
-            throw new ArgumentException("O ID do cliente é inválido.", nameof(customerId));
+       if (customerId <= 0) 
+            throw new CustomException("ID_CLIENTE_INVALIDO");
 
         if (baseAmount < 0) 
-            throw new ArgumentOutOfRangeException(nameof(baseAmount), "O valor da base de cálculo não pode ser negativo.");
+            throw new CustomException("VALOR_NEGATIVO");
 
         if (taxAmount < 0) 
-            throw new ArgumentOutOfRangeException(nameof(taxAmount), "O valor do imposto não pode ser negativo.");
+            throw new CustomException("IMPOSTO_INVALIDO");
 
         CustomerId = customerId;
         BaseAmount = baseAmount;

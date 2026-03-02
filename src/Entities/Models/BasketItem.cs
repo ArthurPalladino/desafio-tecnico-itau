@@ -21,11 +21,11 @@ public class BasketItem
     public BasketItem(string symbol, decimal percentage)
     {
         if (string.IsNullOrWhiteSpace(symbol))
-            throw new ArgumentException("O símbolo do ativo (ticker) é obrigatório.", nameof(symbol));
+            throw new CustomException("TICKER_OBRIGATORIO");
 
         if (percentage <= 0 || percentage > 100)
-            throw new ArgumentOutOfRangeException(nameof(percentage), "O percentual deve ser maior que 0 e menor ou igual a 100.");
-
+            throw new CustomException("PERCENTUAL_INVALIDO");
+            
         Symbol = symbol.Trim().ToUpperInvariant();
         Percentage = percentage;
     }

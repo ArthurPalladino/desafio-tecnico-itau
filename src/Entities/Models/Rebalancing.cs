@@ -24,13 +24,16 @@ public class Rebalancing
     public Rebalancing(int customerId, string sellTicker, string buyTicker, int quantity, RebalancingType type)
     {
         if (customerId <= 0) 
-            throw new ArgumentException("O ID do cliente é inválido.", nameof(customerId));
+            throw new CustomException("ID_CLIENTE_INVALIDO");
+
         if (string.IsNullOrWhiteSpace(sellTicker)) 
-            throw new ArgumentException("O símbolo do ativo de venda (ticker) é obrigatório.", nameof(sellTicker));
+            throw new CustomException("TICKER_OBRIGATORIO"); 
+
         if (string.IsNullOrWhiteSpace(buyTicker)) 
-            throw new ArgumentException("O símbolo do ativo de compra (ticker) é obrigatório.", nameof(buyTicker));
+            throw new CustomException("TICKER_OBRIGATORIO");
+
         if (quantity <= 0) 
-            throw new ArgumentOutOfRangeException(nameof(quantity), "A quantidade deve ser maior que zero.");
+            throw new CustomException("QUANTIDADE_NEGATIVA");
 
         CustomerId = customerId;
         SellTicker = sellTicker.Trim().ToUpperInvariant();

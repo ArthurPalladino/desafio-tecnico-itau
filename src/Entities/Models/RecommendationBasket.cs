@@ -13,21 +13,20 @@ public class RecommendationBasket
 
     public DateTime? DeactivatedAt { get; private set; }
 
-    public List<BasketItem> Items { get; private set; } = new();
+    public List<BasketItem> Itens { get; private set; } = new();
 
     // EF
     protected RecommendationBasket() { } 
 
-    public RecommendationBasket(string name, List<BasketItem> items)
+    public RecommendationBasket(string name, List<BasketItem> itens)
     {
-        if (items.Count != 5)
-            throw new ArgumentException($"A cesta deve conter exatamente 5 ativos. Quantidade informada: {items.Count}.");
+        if (itens.Count != 5)
+            throw new CustomException("QUANTIDADE_ATIVOS_INVALIDA");
 
-        if (items.Sum(i => i.Percentage) != 100)
-            throw new ArgumentException($"A soma dos percentuais deve ser exatamente 100%. Soma atual: {items.Sum(i => i.Percentage)}%.");
-
+        if (itens.Sum(i => i.Percentage) != 100)
+            throw new CustomException("PERCENTUAIS_INVALIDOS");
         Name = name;
-        Items = items;
+        Itens = itens;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
     }

@@ -19,21 +19,13 @@ public class Ticker
     public Ticker(string symbol, decimal currentPrice, DateTime date)
     {
         if (string.IsNullOrWhiteSpace(symbol))
-            throw new ArgumentException("O símbolo do ativo (ticker) não pode estar vazio.", nameof(symbol));
+            throw new CustomException("TICKER_OBRIGATORIO");
 
         if (currentPrice < 0)
-            throw new ArgumentOutOfRangeException(nameof(currentPrice), "O preço atual não pode ser negativo.");
-
+            throw new CustomException("PRECO_NEGATIVO");
         Symbol = symbol.Trim().ToUpperInvariant();
         CurrentPrice = currentPrice;
         PriceDate = date;
     }
 
-    // public void UpdatePrice(decimal newPrice)
-    // {
-    //     if (newPrice < 0)
-    //         throw new ArgumentOutOfRangeException(nameof(newPrice), "O preço não pode ser negativo.");
-
-    //     CurrentPrice = newPrice;
-    // }
 }

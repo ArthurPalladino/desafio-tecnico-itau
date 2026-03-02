@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-namespace WebApi.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/clientes")]
 public class CustomersController : ControllerBase
 {
     private readonly ICustomerService _customerService;
@@ -12,72 +11,38 @@ public class CustomersController : ControllerBase
         _customerService = customerService;
     }
 
-    [HttpPost]
+    [HttpPost("adesao")]
     public async Task<IActionResult> Create([FromBody] CreateCustomerRequest request)
     {
-        try
-        {
-            var customerId = await _customerService.CreateAsync(
-                request.Name, 
-                request.Cpf, 
-                request.Email, 
-                request.Contribution);
-
-            return CreatedAtAction(nameof(Create), new { id = customerId }, new { id = customerId });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Um erro ocorreu ao tentar criar usuário.", detail = ex.Message });
-        }
+        var response = await _customerService.CreateAsync(request);
+        return CreatedAtAction(nameof(Create), new { id = response.ClienteId }, response);
     }
 
-    [HttpGet("{id}/portfolio")]
-    public async Task<IActionResult> GetPortfolio(int id)
+    [HttpPost("{clienteId}/saida")]
+    public async Task<IActionResult> Leave(int clienteId)
     {
-        try
-        {
-            var summary = await _customerService.GetPortfolioSummaryAsync(id);
-            return Ok(summary);
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(new { message = "Customer not found." });
-        }
+        var response = await _customerService.LeaveInvestmentProductAsync(clienteId);
+        return Ok(response);
     }
 
-    [HttpPut("{id}/subscription")]
-    public async Task<IActionResult> ChangeSubscription(int id, [FromBody] bool active)
+    [HttpPut("{clienteId}/valor-mensal")]
+    public async Task<IActionResult> UpdateAmount(int clienteId, [FromBody] decimal newValue)
     {
-        try
-        {
-            await _customerService.UpdateSubscriptionState(id,active);
-            return Ok(new { message = $"Assinatura {(active ? "ativada" : "desativada")} com sucesso!" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var response = await _customerService.UpdateMonthlyAmountAsync(clienteId, newValue);
+        return Ok(response);
     }
 
-    [HttpGet("{id}/profitability")]
-public async Task<IActionResult> GetProfitability(int id)
-{
-    try
+    [HttpGet("{clienteId}/carteira")]
+    public async Task<IActionResult> GetPortfolio(int clienteId)
     {
-        var report = await _customerService.GetDetailedProfitabilityAsync(id);
+        var summary = await _customerService.GetPortfolioSummaryAsync(clienteId);
+        return Ok(summary);
+    }
+
+    [HttpGet("{clienteId}/rentabilidade")]
+    public async Task<IActionResult> GetProfitability(int clienteId)
+    {
+        var report = await _customerService.GetDetailedProfitabilityAsync(clienteId);
         return Ok(report);
     }
-    catch (KeyNotFoundException)
-    {
-        return NotFound(new { message = "Cliente não encontrado." });
-    }
-}
 }

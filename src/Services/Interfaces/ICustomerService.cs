@@ -1,13 +1,14 @@
+
 public interface ICustomerService
 {
-    Task<int> CreateAsync(string name, string document, string email, decimal contribution);
+    Task<CustomerResponse> CreateAsync(CreateCustomerRequest request);
 
 
-    Task UpdateMonthlyAmountAsync(int customerId, decimal newAmount);
+    Task<UpdateAmountResponse> UpdateMonthlyAmountAsync(int customerId, decimal newAmount);
 
-    Task UpdateSubscriptionState(int customerId, bool state);
+    Task<SubscriptionChangeResponse> LeaveInvestmentProductAsync(int customerId);
 
-    Task<object> GetPortfolioSummaryAsync(int customerId);
+    Task<PortfolioSummaryResponse> GetPortfolioSummaryAsync(int customerId);
 
     Task<PortfolioProfitabilityResponse> GetDetailedProfitabilityAsync(int customerId);
 }

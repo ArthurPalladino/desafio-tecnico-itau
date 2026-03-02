@@ -21,15 +21,19 @@ public class Custody
     public Custody(int customerId, int tradingAccountId, string symbol, int quantity, decimal averagePrice)
     {
         if (customerId <= 0) 
-            throw new ArgumentException("O ID do cliente é inválido.", nameof(customerId));
+            throw new CustomException("ID_CLIENTE_INVALIDO");
+
         if (tradingAccountId <= 0) 
-            throw new ArgumentException("O ID da conta gráfica é inválido.", nameof(tradingAccountId));
+            throw new CustomException("ID_CONTA_INVALIDO");
+
         if (string.IsNullOrWhiteSpace(symbol)) 
-            throw new ArgumentException("O símbolo do ativo (ticker) é obrigatório.", nameof(symbol));
+            throw new CustomException("TICKER_OBRIGATORIO");
+
         if (quantity < 0) 
-            throw new ArgumentOutOfRangeException(nameof(quantity), "A quantidade não pode ser negativa.");
+            throw new CustomException("QUANTIDADE_NEGATIVA");
+
         if (averagePrice < 0) 
-            throw new ArgumentOutOfRangeException(nameof(averagePrice), "O preço médio não pode ser negativo.");
+            throw new CustomException("PRECO_NEGATIVO");
 
         CustomerId = customerId;
         TradingAccountId = tradingAccountId;
@@ -40,8 +44,11 @@ public class Custody
 
     public void AddQuantity(int quantity, decimal unitPrice)
     {
-        if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));
-        if (unitPrice < 0) throw new ArgumentOutOfRangeException(nameof(unitPrice));
+        if (quantity <= 0) 
+            throw new CustomException("QUANTIDADE_NEGATIVA");
+
+        if (unitPrice < 0) 
+            throw new CustomException("PRECO_NEGATIVO");
 
         var currentTotal = Quantity * AveragePrice;
         var newTotal = quantity * unitPrice;
@@ -51,8 +58,11 @@ public class Custody
 
     public void RemoveQuantity(int quantity)
     {
-        if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));
-        if (quantity > Quantity) throw new InvalidOperationException("Insufficient quantity in custody.");
+        if (quantity <= 0) 
+            throw new CustomException("QUANTIDADE_NEGATIVA");
+
+        if (quantity > Quantity) 
+            throw new CustomException("CUSTODIA_INSUFICIENTE");
 
         Quantity -= quantity;
     }

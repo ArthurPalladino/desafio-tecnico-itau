@@ -49,7 +49,7 @@ namespace ItauTopFive.Migrations
 
                     b.HasIndex("RecommendationBasketId");
 
-                    b.ToTable("tb_basket_items", (string)null);
+                    b.ToTable("tb_basket_itens", (string)null);
                 });
 
             modelBuilder.Entity("Custody", b =>
@@ -394,7 +394,7 @@ namespace ItauTopFive.Migrations
             modelBuilder.Entity("BasketItem", b =>
                 {
                     b.HasOne("RecommendationBasket", null)
-                        .WithMany("Items")
+                        .WithMany("Itens")
                         .HasForeignKey("RecommendationBasketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -447,7 +447,7 @@ namespace ItauTopFive.Migrations
 
             modelBuilder.Entity("RecommendationBasket", b =>
                 {
-                    b.Navigation("Items");
+                    b.Navigation("Itens");
                 });
 
             modelBuilder.Entity("TradingAccount", b =>

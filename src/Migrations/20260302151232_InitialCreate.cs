@@ -182,7 +182,7 @@ namespace ItauTopFive.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "tb_basket_items",
+                name: "tb_basket_itens",
                 columns: table => new
                 {
                     id_basket_item = table.Column<int>(type: "int", nullable: false)
@@ -190,15 +190,14 @@ namespace ItauTopFive.Migrations
                     id_basket = table.Column<int>(type: "int", nullable: false),
                     st_symbol = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    vl_percentage = table.Column<decimal>(type: "DECIMAL(5,2)", nullable: false),
-                    id_basket1 = table.Column<int>(type: "int", nullable: false)
+                    vl_percentage = table.Column<decimal>(type: "DECIMAL(5,2)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_tb_basket_items", x => x.id_basket_item);
+                    table.PrimaryKey("PK_tb_basket_itens", x => x.id_basket_item);
                     table.ForeignKey(
-                        name: "FK_tb_basket_items_tb_recommendation_baskets_id_basket1",
-                        column: x => x.id_basket1,
+                        name: "FK_tb_basket_itens_tb_recommendation_baskets_id_basket",
+                        column: x => x.id_basket,
                         principalTable: "tb_recommendation_baskets",
                         principalColumn: "id_basket",
                         onDelete: ReferentialAction.Cascade);
@@ -237,9 +236,9 @@ namespace ItauTopFive.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_tb_basket_items_id_basket1",
-                table: "tb_basket_items",
-                column: "id_basket1");
+                name: "IX_tb_basket_itens_id_basket",
+                table: "tb_basket_itens",
+                column: "id_basket");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tb_custodies_CustomerId",
@@ -273,7 +272,7 @@ namespace ItauTopFive.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "tb_basket_items");
+                name: "tb_basket_itens");
 
             migrationBuilder.DropTable(
                 name: "tb_custodies");

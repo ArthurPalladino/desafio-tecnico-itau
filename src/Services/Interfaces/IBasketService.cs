@@ -1,6 +1,8 @@
 public interface IBasketService
 {
-    Task<int> CreateAsync(CreateBasketRequest request);
-    Task<RecommendationBasket?> GetActiveBasketAsync();
+    Task<CreateBasketResponse> CreateAsync(CreateBasketRequest request);
+    Task<BasketAtualResponse> GetActiveBasketAsync();
+
+    Task<BasketHistoryResponse> GetHistoryAsync();
 }
 

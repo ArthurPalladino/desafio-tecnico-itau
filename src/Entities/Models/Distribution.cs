@@ -22,16 +22,20 @@ public class Distribution
 
     public Distribution(int purchaseOrderId, int childAccountId, string symbol, int quantity, decimal executionPrice)
     {
-    if (purchaseOrderId <= 0) 
-        throw new ArgumentException("A ordem de compra informada é inválida.", nameof(purchaseOrderId));
-    if (childAccountId <= 0) 
-        throw new ArgumentException("A conta filhote informada é inválida.", nameof(childAccountId));
-    if (string.IsNullOrWhiteSpace(symbol)) 
-        throw new ArgumentException("O símbolo do ativo (ticker) é inválido ou obrigatório.", nameof(symbol));
-    if (quantity < 0) 
-        throw new ArgumentOutOfRangeException(nameof(quantity), "A quantidade não pode ser negativa.");
-    if (executionPrice < 0) 
-        throw new ArgumentOutOfRangeException(nameof(executionPrice), "O preço de execução não pode ser negativo.");
+        if (purchaseOrderId <= 0) 
+            throw new CustomException("ORDEM_COMPRA_INVALIDA");
+
+        if (childAccountId <= 0) 
+            throw new CustomException("CONTA_FILHOTE_INVALIDA");
+
+        if (string.IsNullOrWhiteSpace(symbol)) 
+            throw new CustomException("TICKER_OBRIGATORIO");
+
+        if (quantity < 0) 
+            throw new CustomException("QUANTIDADE_NEGATIVA");
+
+        if (executionPrice < 0) 
+            throw new CustomException("PRECO_NEGATIVO");
 
         PurchaseOrderId = purchaseOrderId;
         ChildAccountId = childAccountId;

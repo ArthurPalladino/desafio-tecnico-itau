@@ -19,9 +19,6 @@ public class TradingAccount
 
     public TradingAccount(Customer customer, AccountType type)
     {
-        if (customer == null)
-            throw new ArgumentNullException(nameof(customer), "O cliente é obrigatório.");
-
         Customer = customer;
         AccountNumber = GenerateAccountNumber();
         Type = type;

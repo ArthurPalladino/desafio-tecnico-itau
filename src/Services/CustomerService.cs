@@ -11,90 +11,136 @@ public class CustomerService : ICustomerService
         _tradingAccountRepository = tradingAccountRepository;
     }
 
-    public async Task<int> CreateAsync(string name, string cpf, string email, decimal contribution)
+    public async Task<CustomerResponse> CreateAsync(CreateCustomerRequest request)
     {
-        var existing = await _customerRepository.GetCustomerByCpf(cpf);
-        if (existing != null) throw new InvalidOperationException("CPF já cadastrado.");
+        if (request.ValorMensal < 100) 
+            throw new CustomException("VALOR_MENSAL_INVALIDO");
 
-        Customer customer = new Customer(name, cpf, email,contribution);
-        TradingAccount tradingAccount = new TradingAccount(customer,AccountType.SubAccount);
+        var existing = await _customerRepository.GetCustomerByCpf(request.Cpf);
+        if (existing != null) 
+            throw new CustomException("CLIENTE_CPF_DUPLICADO");
+
+        var customer = new Customer(request.Nome, request.Cpf, request.Email, request.ValorMensal);
+        var tradingAccount = new TradingAccount(customer, AccountType.SubAccount);
 
         await _customerRepository.AddAsync(customer);
         await _tradingAccountRepository.AddAsync(tradingAccount);
         await _customerRepository.SaveChangesAsync();
 
-        return customer.Id;
+        return new CustomerResponse(
+            customer.Id,
+            customer.Name,
+            customer.Cpf,
+            customer.Email,
+            customer.MonthlyContribution,
+            customer.IsActive,
+            DateTime.UtcNow,
+            new GraphicAccountResponse(tradingAccount.Id, $"FLH-{customer.Id:D6}", "FILHOTE", DateTime.UtcNow)
+        );
     }
 
-    public async Task UpdateMonthlyAmountAsync(int customerId, decimal newAmount)
+    public async Task<SubscriptionChangeResponse> LeaveInvestmentProductAsync(int customerId)
     {
         var customer = await _customerRepository.GetByIdAsync(customerId);
-        if (customer == null || !customer.IsActive) 
-            throw new InvalidOperationException("Uma assinatura ativa não foi encontrada.");
+        if (customer == null) 
+            throw new CustomException("CLIENTE_NAO_ENCONTRADO");
+        
+        if (!customer.IsActive)
+            throw new CustomException("CLIENTE_JA_INATIVO");
 
-        customer.UpdateContribution(newAmount);
-
+        customer.UpdateSubscriptionState(false);
         await _customerRepository.SaveChangesAsync();
+
+        return new SubscriptionChangeResponse(
+            customer.Id,
+            customer.Name,
+            false,
+            DateTime.UtcNow,
+            "Adesao encerrada. Sua posicao em custodia foi mantida."
+        );
     }
 
-    public async Task UpdateSubscriptionState(int customerId, bool state)
+    public async Task<UpdateAmountResponse> UpdateMonthlyAmountAsync(int customerId, decimal newValue)
     {
-        var customer = await _customerRepository.GetByIdAsync(customerId);
-        if (customer == null) throw new KeyNotFoundException("Usuário näo encontrado");
+        if (newValue < 100) 
+            throw new CustomException("VALOR_MENSAL_INVALIDO");
 
-        customer.UpdateSubscriptionState(state);
+        var customer = await _customerRepository.GetByIdAsync(customerId);
+        if (customer == null) 
+            throw new CustomException("CLIENTE_NAO_ENCONTRADO");
+
+        var valorAnterior = customer.MonthlyContribution;
+        customer.UpdateContribution(newValue);
         await _customerRepository.SaveChangesAsync();
+
+        return new UpdateAmountResponse(
+            customer.Id,
+            valorAnterior,
+            customer.MonthlyContribution,
+            DateTime.UtcNow,
+            "Valor mensal atualizado. O novo valor sera considerado a partir da proxima data de compra."
+        );
     }
 
-    public async Task<object> GetPortfolioSummaryAsync(int customerId)
+    public async Task<PortfolioSummaryResponse> GetPortfolioSummaryAsync(int customerId)
     {
         var customer = await _customerRepository.GetCustomerWithPortfolioAsync(customerId);
-        if (customer == null) throw new KeyNotFoundException("Usuário näo encontrado.");
+        if (customer == null) 
+            throw new CustomException("CLIENTE_NAO_ENCONTRADO");
 
-        return new 
-        {
+        var account = customer.TradingAccount;
+        decimal valorTotalInvestido = account.Custodies.Sum(x => x.Quantity * x.AveragePrice);
+        
+        decimal valorAtualCarteira = account.Custodies.Sum(x => x.Quantity * (x.AveragePrice * 1.05m));
+
+        var ativos = account.Custodies.Select(x => new AssetDto(
+            x.Symbol,
+            x.Quantity,
+            x.AveragePrice,
+            x.AveragePrice * 1.05m, 
+            x.Quantity * (x.AveragePrice * 1.05m), 
+            (x.AveragePrice * 0.05m) * x.Quantity, 
+            5.00m,
+            valorAtualCarteira > 0 ? ((x.Quantity * (x.AveragePrice * 1.05m)) / valorAtualCarteira) * 100 : 0
+        )).ToList();
+
+        return new PortfolioSummaryResponse(
+            customer.Id,
             customer.Name,
-            customer.MonthlyContribution,
-            IsActive = customer.IsActive,
-            Positions = customer.Custodies 
-        };
+            $"FLH-{customer.Id:D6}",
+            DateTime.UtcNow,
+            new PortfolioMetrics(
+                valorTotalInvestido,
+                valorAtualCarteira,
+                valorAtualCarteira - valorTotalInvestido,
+                valorTotalInvestido > 0 ? ((valorAtualCarteira / valorTotalInvestido) - 1) * 100 : 0
+            ),
+            ativos
+        );
     }
 
     public async Task<PortfolioProfitabilityResponse> GetDetailedProfitabilityAsync(int customerId)
     {
         var customer = await _customerRepository.GetCustomerWithPortfolioAsync(customerId);
-        if (customer == null) throw new KeyNotFoundException("Cliente não encontrado.");
+        if (customer == null) 
+            throw new CustomException("CLIENTE_NAO_ENCONTRADO");
 
         var account = customer.TradingAccount;
-        var assets = new List<AssetProfitabilityDto>();
-
-        foreach (var item in account.Custodies)
-        {
-            decimal currentPrice = item.AveragePrice * 1.05m;
-            
-            var profitLoss = (currentPrice - item.AveragePrice) * item.Quantity;
-            var variation = ((currentPrice / item.AveragePrice) - 1) * 100;
-
-            assets.Add(new AssetProfitabilityDto(
-                item.Symbol,
-                item.Quantity,
-                item.AveragePrice,
-                currentPrice,
-                profitLoss,
-                variation
-            ));
-        }
-
         decimal totalInvested = account.Custodies.Sum(x => x.Quantity * x.AveragePrice);
-        decimal currentTotalValue = assets.Sum(x => x.Quantity * x.CurrentPrice);
+        decimal currentTotalValue = account.Custodies.Sum(x => x.Quantity * (x.AveragePrice * 1.05m));
 
         return new PortfolioProfitabilityResponse(
+            customer.Id,
             customer.Name,
-            totalInvested,
-            currentTotalValue,
-            currentTotalValue - totalInvested,
-            totalInvested > 0 ? ((currentTotalValue / totalInvested) - 1) * 100 : 0,
-            assets
+            DateTime.UtcNow,
+            new PortfolioMetrics(
+                totalInvested,
+                currentTotalValue,
+                currentTotalValue - totalInvested,
+                totalInvested > 0 ? ((currentTotalValue / totalInvested) - 1) * 100 : 0
+            ),
+            new List<AporteDto>(),
+            new List<EvolucaoDto>()  
         );
     }
 }
