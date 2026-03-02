@@ -9,6 +9,8 @@ public class TradingAccount
 
     public string AccountNumber { get; private set; } = string.Empty;
 
+    public decimal Balance { get; private set; }
+
     public AccountType Type { get; private set; }
     
     public Customer Customer { get; private set; } = null!;

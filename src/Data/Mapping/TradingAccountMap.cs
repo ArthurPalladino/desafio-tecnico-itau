@@ -29,6 +29,9 @@ namespace Data.Mapping
             builder.Property(c => c.Type)
                 .HasColumnName("tp_account_type");
             
+            builder.Property(x => x.Balance)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0);
             builder.HasMany(c => c.Custodies)
                 .WithOne()
                 .HasForeignKey(cd => cd.TradingAccountId)
