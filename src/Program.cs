@@ -17,6 +17,7 @@ builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
 builder.Services.AddScoped<IDistributionRepository, DistributionRepository>();
 builder.Services.AddScoped<ITaxEventRepository, TaxEventRepository>();
 builder.Services.AddScoped<IRebalancingRepository, RebalancingRepository>();
+builder.Services.AddScoped<IContributionHistoryRepository, ContributionHistoryRepository>();
 
 //SERVICES
 builder.Services.AddScoped<ICustomerService, CustomerService>();

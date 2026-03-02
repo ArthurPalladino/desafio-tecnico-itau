@@ -23,6 +23,7 @@ public class Customer
     
     public TradingAccount TradingAccount { get; private set; } = null!;
     public List<Custody> Custodies { get; private set; } = new();
+    public virtual ICollection<ContributionHistory> ContributionHistories { get; set; } = new List<ContributionHistory>();
 
     // EF
     protected Customer() { }

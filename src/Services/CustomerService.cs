@@ -4,11 +4,13 @@ public class CustomerService : ICustomerService
 {
     private readonly ICustomerRepository _customerRepository;
     private readonly ITradingAccountRepository _tradingAccountRepository;
+    private readonly IContributionHistoryRepository _historyRepository;
 
-    public CustomerService(ICustomerRepository customerRepository, ITradingAccountRepository tradingAccountRepository)
+    public CustomerService(ICustomerRepository customerRepository, ITradingAccountRepository tradingAccountRepository, IContributionHistoryRepository historyRepository)
     {
         _customerRepository = customerRepository;
         _tradingAccountRepository = tradingAccountRepository;
+        _historyRepository = historyRepository;
     }
 
     public async Task<CustomerResponse> CreateAsync(CreateCustomerRequest request)
@@ -69,13 +71,28 @@ public class CustomerService : ICustomerService
         if (customer == null) 
             throw new CustomException("CLIENTE_NAO_ENCONTRADO");
 
-        var valorAnterior = customer.MonthlyContribution;
+        var odlValue = customer.MonthlyContribution;
+
+        if (odlValue == newValue)
+    {
+        throw new CustomException("VALOR_APORTE_IDENTICO");
+    }
+
+        var history = new ContributionHistory
+        {
+            CustomerId = customer.Id,
+            OldValue = odlValue, 
+            NewValue = newValue,                     
+            AlterationDate = DateTime.Now            
+        };
+
+        await _historyRepository.AddAsync(history);
         customer.UpdateContribution(newValue);
         await _customerRepository.SaveChangesAsync();
 
         return new UpdateAmountResponse(
             customer.Id,
-            valorAnterior,
+            odlValue,
             customer.MonthlyContribution,
             DateTime.UtcNow,
             "Valor mensal atualizado. O novo valor sera considerado a partir da proxima data de compra."
