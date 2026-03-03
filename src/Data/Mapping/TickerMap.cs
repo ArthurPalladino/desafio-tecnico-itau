@@ -16,7 +16,7 @@ namespace Data.Mapping
 
             builder.Property(t => t.Symbol)
                 .IsRequired()
-                .HasMaxLength(10)
+                .HasMaxLength(12)
                 .HasColumnName("st_symbol");
 
             builder.Property(t => t.CurrentPrice)

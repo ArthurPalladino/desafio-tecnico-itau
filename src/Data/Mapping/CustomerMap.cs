@@ -41,6 +41,16 @@ namespace Data.Mapping
                 .IsUnique()
                 .HasDatabaseName("ix_customer_cpf");
 
+            builder.HasData(new 
+                {
+                    Id = 1, // ID Fixo para a Master
+                    Name = "Itaú Corretora Master",
+                    Cpf = "00000000000", 
+                    Email = "master@itau.com.br",
+                    MonthlyContribution = 0m,
+                    SubscriptionDate = new DateTime(2024, 1, 1),
+                    IsActive = true
+                });
         }
     }
 }

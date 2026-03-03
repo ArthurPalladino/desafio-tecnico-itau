@@ -31,9 +31,6 @@ public class PurchaseOrder
         if (string.IsNullOrWhiteSpace(symbol)) 
             throw new CustomException("TICKER_OBRIGATORIO");
 
-        if (quantity <= 0) 
-            throw new CustomException("QUANTIDADE_NEGATIVA");
-
         if (unitPrice < 0) 
             throw new CustomException("PRECO_NEGATIVO");
 

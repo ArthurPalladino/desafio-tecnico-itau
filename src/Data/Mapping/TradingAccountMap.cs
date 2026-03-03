@@ -36,6 +36,16 @@ namespace Data.Mapping
                 .WithOne()
                 .HasForeignKey(cd => cd.TradingAccountId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+
+            builder.HasData(new 
+            {
+                Id = 1,
+                CustomerId = 1, 
+                AccountNumber = "000000-0", 
+                Balance = 0m,
+                Type = AccountType.Master 
+            });
         }
     }
 }

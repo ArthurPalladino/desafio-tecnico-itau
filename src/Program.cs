@@ -1,7 +1,9 @@
 using Data;
+using ItauCompraProgramada.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Repositories.Generic;
 using Repositories.Interfaces;
+using Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,8 @@ builder.Services.AddScoped<IRebalancingRepository, RebalancingRepository>();
 builder.Services.AddScoped<IContributionHistoryRepository, ContributionHistoryRepository>();
 
 //SERVICES
+builder.Services.AddScoped<IParserB3CotHist, ParserB3CotHist>();
+builder.Services.AddScoped<IPurchaseEngineService, PurchaseEngineService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IBasketService, BasketService>();
 

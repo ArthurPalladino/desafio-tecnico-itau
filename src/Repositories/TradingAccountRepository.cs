@@ -10,4 +10,10 @@ public class TradingAccountRepository(ItauTopFiveDbContext dbContext) : Reposito
         return await _dbSet.FirstOrDefaultAsync(c => c.CustomerId == id);    
     }
 
+    public async Task<TradingAccount?> GetMasterAccount()
+    {
+        return await _dbSet
+        .Include(ta => ta.Custodies)
+        .FirstOrDefaultAsync(ta => ta.Id == 1);
+    }
 }

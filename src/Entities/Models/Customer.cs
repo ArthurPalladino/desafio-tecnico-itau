@@ -46,6 +46,7 @@ public class Customer
         IsActive = true;
     }
 
+    
     public void UpdateContribution(decimal newContribution)
     {
         if (newContribution < 100)

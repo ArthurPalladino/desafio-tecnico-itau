@@ -30,12 +30,12 @@ public class ExceptionHandlingMiddleware
 
             await context.Response.WriteAsJsonAsync(response);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             context.Response.StatusCode = 500;
             await context.Response.WriteAsJsonAsync(new 
             { 
-                erro = "Erro interno no servidor.", 
+                erro = ex.InnerException.Message, 
                 codigo = "ERRO_INTERNO" 
             });
         }

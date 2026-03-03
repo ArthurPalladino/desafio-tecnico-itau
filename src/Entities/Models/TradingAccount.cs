@@ -26,8 +26,34 @@ public class TradingAccount
         Type = type;
     }
 
+    public void CreditBalance(decimal creditValue)
+    {
+        Balance += creditValue;
+    }
+
+    public void DebitBalance(decimal debitValue)
+    {
+        Balance -= debitValue;
+    }
+
+
+    public void AddCustody(string symbol, int quantity, decimal purchasePrice)
+    {
+        var existingCustody = Custodies.FirstOrDefault(c => c.Symbol == symbol);
+
+        if (existingCustody != null)
+        {
+            existingCustody.AddQuantity(quantity, purchasePrice);
+        }
+        else
+        {
+            Custodies.Add(new Custody(this.CustomerId, this.Id, symbol, quantity, purchasePrice));
+        }
+    }
     private string GenerateAccountNumber() 
     {
         return new Random().Next(100000, 999999).ToString() + "-1";
     }
+
+    
 }

@@ -29,6 +29,7 @@ public static class ErrorCatalog
 
         // --- 404 NOT FOUND ---
         { "CLIENTE_NAO_ENCONTRADO", new(404, "Cliente nao encontrado.") },
+        { "NENHUM_CLIENTE_ATIVO", new(404, "Nenhum cliente ativo encontrado.") },
         { "CESTA_NAO_ENCONTRADA", new(404, "Nenhuma cesta ativa encontrada.") },
         { "COTACAO_NAO_ENCONTRADA", new(404, "Arquivo COTAHIST nao encontrado para a data.") },
 

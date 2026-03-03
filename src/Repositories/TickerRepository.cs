@@ -5,9 +5,21 @@ using Repositories.Interfaces;
 
 public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticker>(dbContext), ITickerRepository
 {
-    public async Task<Ticker?> GetBySymbolAsync(string symbol)
+    public async Task<Ticker?> GetBySymbolAsync(string symbol, DateTime referenceDate)
     {
-        return await _dbSet.FirstOrDefaultAsync(c => c.Symbol.ToLower() == symbol.ToLower());    
+        return await _dbSet
+        .Where(c => c.Symbol.ToLower() == symbol.ToLower()
+                    && c.PriceDate <= referenceDate)
+        .OrderByDescending(c => c.PriceDate)
+        .FirstOrDefaultAsync();    
+    }
+
+    public async Task<Ticker?> GetLatestByTickerAsync(string symbol)
+    {
+            return await _dbSet
+            .Where(c => c.Symbol.ToLower() == symbol.ToLower())
+            .OrderByDescending(c => c.PriceDate)
+            .FirstOrDefaultAsync();   
     }
 
     public async Task<Dictionary<string, Ticker>> GetTickersByDateDictAsync(DateTime date)

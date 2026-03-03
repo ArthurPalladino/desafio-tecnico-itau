@@ -7,7 +7,12 @@ public class CustomerRepository(ItauTopFiveDbContext dbContext) : Repository<Cus
 {
     public async Task<IEnumerable<Customer>> GetActiveCustomers()
     {
-        return await _dbSet.Where(c => c.IsActive).ToListAsync();    
+        return await _context.Customers
+            .Include(c => c.TradingAccount)
+                .ThenInclude(ta => ta.Custodies)
+            .Where(c => c.IsActive &&
+                        c.TradingAccount.Type != AccountType.Master)
+            .ToListAsync();
     }
 
     public async Task<Customer?> GetCustomerByCpf(string cpf)
