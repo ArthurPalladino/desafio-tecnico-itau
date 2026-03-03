@@ -4,7 +4,8 @@ namespace Repositories.Interfaces
     {
         Task<Ticker?> GetBySymbolAsync(string symbol, DateTime referenceDate);
         Task<Ticker?> GetLatestByTickerAsync(string symbol);
-        Task<Dictionary<string ,Ticker>> GetTickersByDateDictAsync(DateTime date);
+        Task<Dictionary<string, Ticker>> GetTickersDictBySymbol(List<string> symbols);
+        Task<Dictionary<string, Ticker>> GetTickersByDateDictAsync(DateTime date);
         
     }
 }

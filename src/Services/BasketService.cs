@@ -1,10 +1,10 @@
 using Repositories.Interfaces;
 
-public class BasketService : IBasketService
+public class RecommendationBasketService : IRecommendationBasketService
 {
     private readonly IRecommendationBasketRepository _recommendationBasketRepository;
 
-    public BasketService(IRecommendationBasketRepository recommendationBasketRepository)
+    public RecommendationBasketService(IRecommendationBasketRepository recommendationBasketRepository)
     {
         _recommendationBasketRepository = recommendationBasketRepository;
     }

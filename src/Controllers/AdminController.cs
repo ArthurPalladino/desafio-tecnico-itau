@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 [Route("api/admin/cesta")]
 public class BasketsController : ControllerBase
 {
-    private readonly IBasketService _basketService;
+    private readonly IRecommendationBasketService _basketService;
 
-    public BasketsController(IBasketService basketService)
+    public BasketsController(IRecommendationBasketService basketService)
     {
         _basketService = basketService;
     }

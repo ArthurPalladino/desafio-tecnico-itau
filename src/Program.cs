@@ -25,7 +25,8 @@ builder.Services.AddScoped<IContributionHistoryRepository, ContributionHistoryRe
 builder.Services.AddScoped<IParserB3CotHist, ParserB3CotHist>();
 builder.Services.AddScoped<IPurchaseEngineService, PurchaseEngineService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<IBasketService, BasketService>();
+builder.Services.AddScoped<IRecommendationBasketService, RecommendationBasketService>();
+builder.Services.AddScoped<ITaxService, TaxService>();
 
 
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();

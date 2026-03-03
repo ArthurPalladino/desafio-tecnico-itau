@@ -8,9 +8,11 @@ public class PurchaseEngineService : IPurchaseEngineService
     private readonly IRecommendationBasketRepository _basketRepository;
     private readonly ITickerRepository _tickerRepository;
     private readonly ITradingAccountRepository _accountRepository;
-    private readonly ICustodyRepository _custodyRepository;
 
     private readonly IPurchaseOrderRepository _purchaseOrderRepository;
+    private readonly ITaxService _taxService;
+
+    private readonly IKafkaProducer _kafkaProducer;
 
     public PurchaseEngineService(
         IPurchaseOrderRepository purchaseOrderRepository,
@@ -18,18 +20,20 @@ public class PurchaseEngineService : IPurchaseEngineService
         IRecommendationBasketRepository basketRepository,
         ITickerRepository tickerRepository,
         ITradingAccountRepository accountRepository,
-        ICustodyRepository custodyRepository
+        ITaxService taxService,
+        IKafkaProducer kafkaProducer
         )
     {
         _purchaseOrderRepository = purchaseOrderRepository;
-        _custodyRepository = custodyRepository;
         _customerRepository = customerRepository;
         _basketRepository = basketRepository;
         _tickerRepository = tickerRepository;
         _accountRepository = accountRepository;
+        _taxService =taxService;
+        _kafkaProducer = kafkaProducer;
     }
 
-    void TickerDistribution(IEnumerable<Customer> customers, Ticker ticker, Custody masterCustody, Dictionary<int, decimal> percentagePerCustomer)
+    async Task TickerDistribution(IEnumerable<Customer> customers, Ticker ticker, Custody masterCustody, Dictionary<int, decimal> percentagePerCustomer)
     {
         foreach (var customer in customers)
         {
@@ -37,12 +41,34 @@ public class PurchaseEngineService : IPurchaseEngineService
             decimal customerQuantityDec = customerPercentage * masterCustody.Quantity;
             int customerQuantity = Convert.ToInt32(Math.Floor(customerQuantityDec));
             if(customerQuantity>0){
+                await PostIrInKafkaAsync(customer,ticker,customerQuantity);
                 customer.TradingAccount.AddCustody(ticker.Symbol,customerQuantity,ticker.CurrentPrice);
                 masterCustody.RemoveQuantity(customerQuantity);
             }
         }            
     }
+    public async Task PostIrInKafkaAsync( Customer customer, Ticker ticker , decimal qty)
+    {
+        decimal valorOperacao = qty * ticker.CurrentPrice;
+        decimal valorIR = _taxService.CalculateRetentionTax(valorOperacao);
+        decimal aliquota = _taxService.RetentionTaxRate;
+        var irDedoDuroMessage = new
+        {
+            tipo = "IR_DEDO_DURO",
+            clienteId = customer.Id,
+            cpf = customer.Cpf, 
+            ticker = ticker.Symbol,
+            tipoOperacao = "COMPRA",
+            quantidade = qty,
+            precoUnitario = ticker.CurrentPrice,
+            valorOperacao = valorOperacao,
+            aliquota = aliquota,
+            valorIR = valorIR,
+            dataOperacao = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+        };
 
+        await _kafkaProducer.ProduceAsync("ir-dedo-duro", customer.Id.ToString(), irDedoDuroMessage);
+    }
     public async Task CreatePurchaseOrder(int masterAccountId, string tickerBase, int quantidadeTotal, decimal unitPrice)
     {
         int lotePadrao = (quantidadeTotal / 100) * 100; 
@@ -63,7 +89,8 @@ public class PurchaseEngineService : IPurchaseEngineService
     {
         var customers = await _customerRepository.GetActiveCustomers();
         var recommendationBasket = await _basketRepository.GetActiveBasketWithItensAsync();
-        var tickers = await _tickerRepository.GetTickersByDateDictAsync(referDate.Date);
+        var symbols = recommendationBasket.Itens.Select(c => c.Symbol).ToList();
+        var tickers = await _tickerRepository.GetTickersDictBySymbol(symbols);
         var masterAccount = await _accountRepository.GetMasterAccount(); 
 
         var totalAmountWithNoMasterBalance = customers.Sum(c => c.MonthlyContribution/3m);
@@ -89,7 +116,7 @@ public class PurchaseEngineService : IPurchaseEngineService
             }
             if (masterCustody != null && masterCustody.Quantity > 0)
             {
-                TickerDistribution(customers, ticker, masterCustody, percentagePerCustomer);
+                await TickerDistribution(customers, ticker, masterCustody, percentagePerCustomer);
             }
         }
         await _customerRepository.SaveChangesAsync();

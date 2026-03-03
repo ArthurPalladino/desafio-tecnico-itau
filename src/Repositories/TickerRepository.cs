@@ -24,9 +24,15 @@ public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticke
 
     public async Task<Dictionary<string, Ticker>> GetTickersByDateDictAsync(DateTime date)
     {
+    return await _context.Tickers
+        .Where(t => t.PriceDate == date)
+        .ToDictionaryAsync(t => t.Symbol, t => t); 
+    }
+
+    public async Task<Dictionary<string, Ticker>> GetTickersDictBySymbol(List<string> symbols)
+    {
         return await _context.Tickers
-            .Where(t => t.PriceDate == date)
+            .Where(t => symbols.Contains(t.Symbol))
             .ToDictionaryAsync(t => t.Symbol, t => t); 
     }
-    
 }
