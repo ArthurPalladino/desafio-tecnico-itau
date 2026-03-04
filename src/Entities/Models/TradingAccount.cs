@@ -50,6 +50,21 @@ public class TradingAccount
             Custodies.Add(new Custody(this.CustomerId, this.Id, symbol, quantity, purchasePrice));
         }
     }
+
+    public void RemoveCustody(int idCustody, int quantity)
+    {
+        var custody = Custodies.FirstOrDefault(c => c.Id == idCustody);
+        
+        if (custody == null) 
+            throw new CustomException("CUSTODIA_INSUFICIENTE");
+
+        custody.RemoveQuantity(quantity);
+
+        if (custody.Quantity == 0)
+        {
+            Custodies.Remove(custody);
+        }
+    }
     private string GenerateAccountNumber() 
     {
         return new Random().Next(100000, 999999).ToString() + "-1";

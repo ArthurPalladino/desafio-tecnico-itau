@@ -10,6 +10,8 @@ public class PurchaseEngineService : IPurchaseEngineService
     private readonly ITradingAccountRepository _accountRepository;
     private readonly IPurchaseOrderRepository _purchaseOrderRepository;
     private readonly ITaxService _taxService;
+    private readonly IPurchaseOrderService _purchaseOrderService;
+
     private readonly IKafkaProducer _kafkaProducer;
 
     public PurchaseEngineService(
@@ -21,7 +23,8 @@ public class PurchaseEngineService : IPurchaseEngineService
         ITaxService taxService,
         IDistributionRepository distributionRepository,
         IKafkaProducer kafkaProducer,
-        ITaxEventRepository taxEventRepository
+        ITaxEventRepository taxEventRepository,
+        IPurchaseOrderService purchaseOrderService
         )
     {
         _taxEventRepository = taxEventRepository;
@@ -30,9 +33,10 @@ public class PurchaseEngineService : IPurchaseEngineService
         _basketRepository = basketRepository;
         _tickerRepository = tickerRepository;
         _accountRepository = accountRepository;
+        _distributionRepository = distributionRepository;
         _taxService = taxService;
         _kafkaProducer = kafkaProducer;
-        _distributionRepository = distributionRepository;
+        _purchaseOrderService = purchaseOrderService;
     }
 
     private DateTime ReturnUtilDate(DateTime data)
@@ -49,7 +53,7 @@ public class PurchaseEngineService : IPurchaseEngineService
 
     return data;
 }
-    async Task<int> TickerDistribution(IEnumerable<Customer> customers, Ticker ticker, Custody masterCustody, Dictionary<int, decimal> percentagePerCustomer, PurchaseOrder purchaseOrder, List<Distribution> allDistributions)
+    async Task<int> TickerDistribution(IEnumerable<Customer> customers, Ticker ticker, Custody masterCustody,TradingAccount masterAccount, Dictionary<int, decimal> percentagePerCustomer, PurchaseOrder purchaseOrder, List<Distribution> allDistributions)
     {
         int events = 0;
         foreach (var customer in customers)
@@ -63,63 +67,18 @@ public class PurchaseEngineService : IPurchaseEngineService
                 await _distributionRepository.AddAsync(distribution);
                 allDistributions.Add(distribution);
                 
-                await PostIrInKafkaAsync(customer, ticker, customerQuantity);
+                decimal operationValue = customerQuantity*purchaseOrder.UnitPrice;
+                await _taxService.PostTaxInKafkaAsync(customer, ticker.Symbol,operationValue, _taxService.CalculateRetentionTax(operationValue),TaxType.DedoDuro);
                 events++;
                 
                 customer.TradingAccount.AddCustody(ticker.Symbol, customerQuantity, ticker.CurrentPrice);
-                masterCustody.RemoveQuantity(customerQuantity);
+                masterAccount.RemoveCustody(masterCustody.Id,customerQuantity);
             }
         }
         return events;
     }
 
-    public async Task PostIrInKafkaAsync(Customer customer, Ticker ticker, decimal qty)
-    {
-        decimal valorOperacao = qty * ticker.CurrentPrice;
-        decimal valorIR = _taxService.CalculateRetentionTax(valorOperacao);
-        decimal aliquota = _taxService.RetentionTaxRate;
-        TaxEvent taxEvent = new TaxEvent(customer.Id, valorOperacao, valorIR, TaxType.DedoDuro);
-        await _taxEventRepository.AddAsync(taxEvent);
-        var irDedoDuroMessage = new
-        {
-            tipo = "IR_DEDO_DURO",
-            clienteId = customer.Id,
-            cpf = customer.Cpf,
-            ticker = ticker.Symbol,
-            tipoOperacao = "COMPRA",
-            quantidade = qty,
-            precoUnitario = ticker.CurrentPrice,
-            valorOperacao = valorOperacao,
-            aliquota = aliquota,
-            valorIR = valorIR,
-            dataOperacao = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
-        };
 
-        await _kafkaProducer.ProduceAsync("ir-dedo-duro", customer.Id.ToString(), irDedoDuroMessage);
-        taxEvent.PublicInKafka();
-    }
-
-    public async Task<List<PurchaseOrder>> CreatePurchaseOrder(int masterAccountId, string tickerBase, int quantidadeTotal, decimal unitPrice)
-    {
-        int lotePadrao = quantidadeTotal / 100 * 100;
-        int fracionario = quantidadeTotal % 100;
-
-        var createdOrders = new List<PurchaseOrder>();
-        if (fracionario > 0)
-        {
-            var pFrac = new PurchaseOrder(masterAccountId, tickerBase + "F", MarketType.Fractional, fracionario, unitPrice);
-            await _purchaseOrderRepository.AddAsync(pFrac);
-            createdOrders.Add(pFrac);
-        }
-
-        if (lotePadrao > 0)
-        {
-            var pLote = new PurchaseOrder(masterAccountId, tickerBase, MarketType.StandardLot, lotePadrao, unitPrice);
-            await _purchaseOrderRepository.AddAsync(pLote);
-            createdOrders.Add(pLote);
-        }
-        return createdOrders;
-    }
 
     public async Task<MotorCompraResponseDto> ExecuteAsync(DateTime referDate)
     {
@@ -132,9 +91,6 @@ public class PurchaseEngineService : IPurchaseEngineService
         var recommendationBasket = await _basketRepository.GetActiveBasketWithItensAsync();
         if (recommendationBasket == null) 
             throw new CustomException("CESTA_NAO_ENCONTRADA");
-
-        if (recommendationBasket.Itens == null || recommendationBasket.Itens.Count != 5)
-            throw new CustomException("QUANTIDADE_ATIVOS_INVALIDA");
 
         var symbols = recommendationBasket.Itens.Select(c => c.Symbol).ToList();
         var tickers = await _tickerRepository.GetTickersDictBySymbol(symbols);
@@ -161,15 +117,16 @@ public class PurchaseEngineService : IPurchaseEngineService
         foreach (var item in recommendationBasket.Itens)
         {
             Ticker ticker = tickers[item.Symbol];
-            Custody masterCustody = masterAccount.Custodies.FirstOrDefault(c => c.Symbol == ticker.Symbol);
             int totalNeeded = (int)Math.Floor(totalAmount * (item.Percentage / 100m) / ticker.CurrentPrice);
+
+            Custody masterCustody = masterAccount.Custodies.FirstOrDefault(c => c.Symbol == ticker.Symbol);
             int availableInMaster = masterCustody?.Quantity ?? 0;
             int quantityToBuy = Math.Max(0, totalNeeded - availableInMaster);
 
             PurchaseOrder currentOrderRef = null;
             if (quantityToBuy > 0)
             {
-                var orders = await CreatePurchaseOrder(masterAccount.Id, ticker.Symbol, quantityToBuy, ticker.CurrentPrice);
+                var orders = await _purchaseOrderService.CreatePurchaseOrder(masterAccount.Id, ticker.Symbol, quantityToBuy, ticker.CurrentPrice);
                 allCreatedOrders.AddRange(orders);
                 currentOrderRef = orders.Last();
 
@@ -182,7 +139,7 @@ public class PurchaseEngineService : IPurchaseEngineService
             {
                 currentOrderRef ??= await _purchaseOrderRepository.GetLastOrderAsync(ticker.Symbol) 
                        ?? throw new CustomException("ORDEM_COMPRA_INVALIDA");
-                totalEvents += await TickerDistribution(customers, ticker, masterCustody, percentagePerCustomer, currentOrderRef, allCreatedDistributions);
+                totalEvents += await TickerDistribution(customers, ticker, masterCustody,masterAccount, percentagePerCustomer, currentOrderRef, allCreatedDistributions);
                 
                 if(masterCustody.Quantity > 0)
                 {
