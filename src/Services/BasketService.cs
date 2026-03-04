@@ -3,10 +3,16 @@ using Repositories.Interfaces;
 public class RecommendationBasketService : IRecommendationBasketService
 {
     private readonly IRecommendationBasketRepository _recommendationBasketRepository;
+    private readonly IRebalancingEngineService _rebalancingEngineService;
+    private readonly ITickerRepository _tickerRepository;
 
-    public RecommendationBasketService(IRecommendationBasketRepository recommendationBasketRepository)
+    public RecommendationBasketService(IRecommendationBasketRepository recommendationBasketRepository,
+        IRebalancingEngineService rebalancingEngineService,
+        ITickerRepository tickerRepository)
     {
+        _tickerRepository = tickerRepository;
         _recommendationBasketRepository = recommendationBasketRepository;
+        _rebalancingEngineService = rebalancingEngineService;
     }
 
     public async Task<CreateBasketResponse> CreateAsync(CreateBasketRequest request)
@@ -15,6 +21,20 @@ public class RecommendationBasketService : IRecommendationBasketService
         var basketItens = request.itens
             .Select(dto => new BasketItem(dto.ticker, dto.percentual))
             .ToList();
+
+        
+
+        var existingSymbols = new HashSet<string>(await _tickerRepository.GetUniqueSymbols());
+        var unknownSymbols = basketItens
+        .Select(i => i.Symbol)
+        .Where(symbol => !existingSymbols.Contains(symbol))
+        .ToList();
+
+        if (unknownSymbols.Any())
+        {
+            var missing = string.Join(", ", unknownSymbols);
+            throw new CustomException("TICKER_NAO_ENCONTRADO", missing); 
+        }
 
         var newBasket = new RecommendationBasket(request.nome, basketItens);
 
@@ -34,6 +54,8 @@ public class RecommendationBasketService : IRecommendationBasketService
 
         await _recommendationBasketRepository.AddAsync(newBasket);
         await _recommendationBasketRepository.SaveChangesAsync();
+        bool rebalancingTrigger = await _rebalancingEngineService.ExecuteAsync(RebalancingType.RecommendationChange);
+
 
         return new CreateBasketResponse
         {
@@ -46,7 +68,7 @@ public class RecommendationBasketService : IRecommendationBasketService
                 ticker = i.Symbol, 
                 percentual = i.Percentage 
             }).ToList(),
-            rebalanceamentoDisparado = activeBasket != null,
+            rebalanceamentoDisparado = rebalancingTrigger,
             mensagem = activeBasket == null ? "Primeira cesta cadastrada com sucesso." : "Cesta atualizada com sucesso.",
             cestaAnteriorDesativada = anteriorInfo
         };
@@ -68,7 +90,8 @@ public class RecommendationBasketService : IRecommendationBasketService
             itens = basket.Itens.Select(i => new BasketItemAtualResponse 
             { 
                 ticker = i.Symbol, 
-                percentual = i.Percentage 
+                percentual = i.Percentage,
+                cotacaoAtual = _tickerRepository.GetLatestByTickerAsync(i.Symbol).Result.CurrentPrice
             }).ToList()
         };
     }

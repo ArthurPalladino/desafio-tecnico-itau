@@ -52,7 +52,7 @@ public class TaxService : ITaxService
         {
             return 0m;
         }
-
+ 
         decimal totalCost = quantity * averagePrice;
         decimal profit = saleValue - totalCost;
 

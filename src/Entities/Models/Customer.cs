@@ -30,20 +30,49 @@ public class Customer
 
     public Customer(string name, string cpf, string email, decimal contribution)
     {
+        cpf = new string(cpf.Where(char.IsDigit).ToArray());
         if (string.IsNullOrWhiteSpace(name))
-            throw new CustomException("NOME_OBRIGATORIO");
+            throw new CustomException("NAME_REQUIRED");
 
-        if (string.IsNullOrWhiteSpace(cpf) || cpf.Length != 11)
-            throw new CustomException("CPF_INVALIDO");
+        if (!IsValidCpf(cpf))
+            throw new CustomException("INVALID_CPF");
 
         if (contribution < 100)
-            throw new CustomException("VALOR_MENSAL_INVALIDO");
+            throw new CustomException("INVALID_MONTHLY_CONTRIBUTION");
+
         Name = name;
         Cpf = cpf;
         Email = email;
         MonthlyContribution = contribution;
         SubscriptionDate = DateTime.Now;
         IsActive = true;
+    }
+
+    private bool IsValidCpf(string cpf)
+    {
+        if (string.IsNullOrWhiteSpace(cpf)) return false;
+
+        cpf = new string(cpf.Where(char.IsDigit).ToArray());
+        if (cpf.Length != 11) return false;
+        if (cpf.Distinct().Count() == 1) return false;
+
+        int sum = 0;
+
+        for (int i = 0; i < 9; i++)
+            sum += (cpf[i] - '0') * (10 - i);
+
+        int remainder = sum % 11;
+        int firstDigit = remainder < 2 ? 0 : 11 - remainder;
+
+        sum = 0;
+        for (int i = 0; i < 10; i++)
+            sum += (cpf[i] - '0') * (11 - i);
+
+        remainder = sum % 11;
+        int secondDigit = remainder < 2 ? 0 : 11 - remainder;
+
+        return cpf[9] - '0' == firstDigit &&
+            cpf[10] - '0' == secondDigit;
     }
 
     

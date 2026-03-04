@@ -8,4 +8,10 @@ public class CustomException : Exception
         Code = code;
         StatusCode = ErrorCatalog.Get(code).StatusCode;
     }
+    public CustomException(string code, string extraInfo) 
+        : base($"{ErrorCatalog.Get(code).Message} ({extraInfo})")
+    {
+        Code = code;
+        StatusCode = ErrorCatalog.Get(code).StatusCode;
+    }
 }

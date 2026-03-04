@@ -11,6 +11,7 @@ public class PurchaseEngineService : IPurchaseEngineService
     private readonly IPurchaseOrderRepository _purchaseOrderRepository;
     private readonly ITaxService _taxService;
     private readonly IPurchaseOrderService _purchaseOrderService;
+    private readonly IRebalancingEngineService _rebalancingEngineService;
 
     private readonly IKafkaProducer _kafkaProducer;
 
@@ -24,7 +25,8 @@ public class PurchaseEngineService : IPurchaseEngineService
         IDistributionRepository distributionRepository,
         IKafkaProducer kafkaProducer,
         ITaxEventRepository taxEventRepository,
-        IPurchaseOrderService purchaseOrderService
+        IPurchaseOrderService purchaseOrderService,
+        IRebalancingEngineService rebalancingEngineService
         )
     {
         _taxEventRepository = taxEventRepository;
@@ -37,6 +39,7 @@ public class PurchaseEngineService : IPurchaseEngineService
         _taxService = taxService;
         _kafkaProducer = kafkaProducer;
         _purchaseOrderService = purchaseOrderService;
+        _rebalancingEngineService = rebalancingEngineService;
     }
 
     private DateTime ReturnUtilDate(DateTime data)
@@ -72,7 +75,7 @@ public class PurchaseEngineService : IPurchaseEngineService
                 events++;
                 
                 customer.TradingAccount.AddCustody(ticker.Symbol, customerQuantity, ticker.CurrentPrice);
-                masterAccount.RemoveCustody(masterCustody.Id,customerQuantity);
+                masterAccount.RemoveCustody(masterCustody.Symbol,customerQuantity);
             }
         }
         return events;
@@ -148,8 +151,9 @@ public class PurchaseEngineService : IPurchaseEngineService
             }
         }
 
+        
         await _customerRepository.SaveChangesAsync();
-
+        await _rebalancingEngineService.ExecuteAsync(RebalancingType.OutofBalance);
         return new MotorCompraResponseDto
         {
             DataExecucao = referDate,

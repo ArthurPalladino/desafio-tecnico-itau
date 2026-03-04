@@ -7,6 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTOs\**" />
+    <Compile Remove="Models\**" />
+    <Content Remove="DTOs\**" />
+    <Content Remove="Models\**" />
+    <EmbeddedResource Remove="DTOs\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <None Remove="DTOs\**" />
+    <None Remove="Models\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.13.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -19,8 +30,6 @@
   <ItemGroup>
     <Folder Include="Data\DbContext\" />
     <Folder Include="Data\Messaging\" />
-    <Folder Include="Models\" />
-    <Folder Include="DTOs\" />
     <Folder Include="Controllers\" />
     <Folder Include="Parser\" />
     <Folder Include="Repositories\" />

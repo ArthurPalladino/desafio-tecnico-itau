@@ -22,14 +22,14 @@ builder.Services.AddScoped<IContributionHistoryRepository, ContributionHistoryRe
 
 //SERVICES
 builder.Services.AddScoped<IParserB3CotHist, ParserB3CotHist>();
-builder.Services.AddScoped<IPurchaseEngineService, PurchaseEngineService>();
+
 builder.Services.AddScoped<IRebalancingEngineService, RebalancingEngineService>();
 
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IRecommendationBasketService, RecommendationBasketService>();
 builder.Services.AddScoped<ITaxService, TaxService>();
 builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
-
+builder.Services.AddScoped<IPurchaseEngineService, PurchaseEngineService>();
 
 
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();

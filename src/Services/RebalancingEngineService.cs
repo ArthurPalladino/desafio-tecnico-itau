@@ -47,7 +47,7 @@ public class RebalancingEngineService : IRebalancingEngineService
     async Task<decimal> Sell(TradingAccount account, Custody custody,int quantity,Ticker ticker)
     {
         account.CreditBalance(quantity*ticker.CurrentPrice);
-        account.RemoveCustody(custody.Id,quantity);
+        account.RemoveCustody(custody.Symbol,quantity);
         await _purchaseOrderService.CreateSellOrders(account,custody,ticker.CurrentPrice);
         return ticker.CurrentPrice*quantity;
     }
@@ -73,7 +73,7 @@ public class RebalancingEngineService : IRebalancingEngineService
             throw new CustomException("CESTA_NAO_ENCONTRADA");
 
         var symbols = recommendationBasket.Itens.Select(c => c.Symbol).ToList();
-        var tickers = await _tickerRepository.GetTickersDictBySymbol(symbols);
+        var tickers = await _tickerRepository.GetTickersDictByLastDate();
         
         if (tickers == null)
             throw new CustomException("COTACAO_NAO_ENCONTRADA");
@@ -102,8 +102,9 @@ public class RebalancingEngineService : IRebalancingEngineService
 
                 int quantityToSell = 0;
                 decimal currentWeight = (customerCustody.Quantity * ticker.CurrentPrice) / currentWealth;
-                decimal targetWeight = basketItem.Percentage / 100m;
-                if (currentWeight > (targetWeight + THRESHOLD))
+                decimal targetWeight = basketItem != null ? (basketItem.Percentage / 100m) : 0m;
+                if (basketItem == null) quantityToSell = customerCustody.Quantity;
+                else if (currentWeight > (targetWeight + THRESHOLD))
                 {
                     decimal targetValue = targetWeight * currentWealth;
                     decimal overValue = (customerCustody.Quantity * ticker.CurrentPrice) - targetValue;

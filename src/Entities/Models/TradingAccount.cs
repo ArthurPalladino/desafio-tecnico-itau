@@ -51,9 +51,9 @@ public class TradingAccount
         }
     }
 
-    public void RemoveCustody(int idCustody, int quantity)
+    public void RemoveCustody(string symbol, int quantity)
     {
-        var custody = Custodies.FirstOrDefault(c => c.Id == idCustody);
+        var custody = Custodies.FirstOrDefault(c => c.Symbol == symbol);
         
         if (custody == null) 
             throw new CustomException("CUSTODIA_INSUFICIENTE");

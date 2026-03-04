@@ -5,6 +5,14 @@ using Repositories.Interfaces;
 
 public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticker>(dbContext), ITickerRepository
 {
+    public async Task<List<String>> GetUniqueSymbols()
+    {
+            return await _dbSet
+            .Select(t => t.Symbol)
+            .Distinct()
+            .ToListAsync();
+    }
+
     public async Task<Ticker?> GetBySymbolAsync(string symbol, DateTime referenceDate)
     {
         return await _dbSet
@@ -27,6 +35,17 @@ public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticke
     return await _context.Tickers
         .Where(t => t.PriceDate == date)
         .ToDictionaryAsync(t => t.Symbol, t => t); 
+    }
+
+    public async Task<Dictionary<string, Ticker>> GetTickersDictByLastDate()
+    {
+        var lastDate = await _dbSet.MaxAsync(t => t.PriceDate);
+
+        var tickers = await _dbSet
+            .Where(t => t.PriceDate == lastDate)
+            .ToDictionaryAsync(t => t.Symbol, t => t);
+
+        return tickers;
     }
 
     public async Task<Dictionary<string, Ticker>> GetTickersDictBySymbol(List<string> symbols)

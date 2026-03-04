@@ -1,7 +1,9 @@
+using Repositories.Interfaces;
+
 public class PurchaseOrderService : IPurchaseOrderService
 {
-    private readonly PurchaseOrderRepository _purchaseOrderRepository;
-    public PurchaseOrderService(PurchaseOrderRepository purchaseOrderRepository)
+    private readonly IPurchaseOrderRepository _purchaseOrderRepository;
+    public PurchaseOrderService(IPurchaseOrderRepository purchaseOrderRepository)
     {
         _purchaseOrderRepository = purchaseOrderRepository;
     }

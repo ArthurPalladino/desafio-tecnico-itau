@@ -12,6 +12,7 @@ public static class ErrorCatalog
         { "CLIENTE_JA_INATIVO", new(400, "Cliente ja havia saido do produto.") },
 
         // --- 400 BAD REQUEST (Validações Específicas) ---
+        { "TICKER_NAO_ENCONTRADO", new(400, "Os seguintes tickers não foram encontrados:") },
         { "VALOR_APORTE_IDENTICO", new(400, "O novo valor de aporte deve ser diferente do valor atual.") },
         { "NOME_OBRIGATORIO", new(400, "O nome é obrigatório.") },
         { "CPF_INVALIDO", new(400, "CPF inválido. O campo deve conter exatamente 11 dígitos numéricos.") },
