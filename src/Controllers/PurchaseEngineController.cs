@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using ItauCompraProgramada.Application.Interfaces;
 using Repositories.Interfaces;
 using System;
 using System.Threading.Tasks;
@@ -25,10 +24,7 @@ public class PurchaseEngineController : ControllerBase
     public async Task<IActionResult> MotorExecute([FromQuery] DateTime dataReferencia)
     {
         await _parser.ParseAndSyncDatabaseAsync(dataReferencia); 
-        await  _purchaseEngine.ExecuteAsync(dataReferencia);
-        return Ok(new { 
-            Message = "Processamento do dia concluído com sucesso!", 
-            Date = dataReferencia.ToString("yyyy-MM-dd") 
-        });
+        return Ok(await  _purchaseEngine.ExecuteAsync(dataReferencia));
+
     }
 }

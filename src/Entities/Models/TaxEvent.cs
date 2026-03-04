@@ -39,4 +39,9 @@ public class TaxEvent
         Type = type;
         EventDate = DateTime.Now;
     }
+
+    public void PublicInKafka()
+    {
+        AlreadyInKafka = true;
+    }
 }

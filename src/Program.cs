@@ -1,5 +1,4 @@
 using Data;
-using ItauCompraProgramada.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Repositories.Generic;
 using Repositories.Interfaces;
