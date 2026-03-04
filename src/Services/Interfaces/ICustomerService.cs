@@ -11,4 +11,5 @@ public interface ICustomerService
     Task<PortfolioSummaryResponse> GetPortfolioSummaryAsync(int customerId);
 
     Task<PortfolioProfitabilityResponse> GetDetailedProfitabilityAsync(int customerId);
+
 }

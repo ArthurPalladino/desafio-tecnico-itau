@@ -45,4 +45,6 @@ public class CustomersController : ControllerBase
         var report = await _customerService.GetDetailedProfitabilityAsync(clienteId);
         return Ok(report);
     }
+
+    
 }

@@ -30,6 +30,7 @@ builder.Services.AddScoped<IRecommendationBasketService, RecommendationBasketSer
 builder.Services.AddScoped<ITaxService, TaxService>();
 builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 builder.Services.AddScoped<IPurchaseEngineService, PurchaseEngineService>();
+builder.Services.AddScoped<IMasterAccountService, MasterAccountService>();
 
 
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();

@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/admin/cesta")]
-public class BasketsController : ControllerBase
+public class BasketController : ControllerBase
 {
     private readonly IRecommendationBasketService _basketService;
 
-    public BasketsController(IRecommendationBasketService basketService)
+    public BasketController(IRecommendationBasketService basketService)
     {
         _basketService = basketService;
     }
@@ -34,4 +34,6 @@ public class BasketsController : ControllerBase
         
         return Ok(response);
     }
+
+    
 }

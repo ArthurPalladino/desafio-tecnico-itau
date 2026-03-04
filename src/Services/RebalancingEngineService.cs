@@ -64,6 +64,7 @@ public class RebalancingEngineService : IRebalancingEngineService
     }
     public async Task<bool> ExecuteAsync(RebalancingType rebalancingType)
     {
+        bool hasTrigger = false;
         var customers = await _customerRepository.GetActiveCustomers();
         if (customers == null || !customers.Any()) 
             return false;
@@ -113,6 +114,7 @@ public class RebalancingEngineService : IRebalancingEngineService
 
                 if (quantityToSell > 0)
                 {
+                    hasTrigger = true;
                     decimal operationValue = await Sell(customer.TradingAccount,customerCustody,quantityToSell,ticker);
                     DateTime now = DateTime.Now;
                     decimal totalSalesInMonth = await _purchaseOrderRepository.GetTotalSalesValueInMonthAsync(customer.TradingAccount.Id,now.Year,now.Month);
@@ -124,7 +126,16 @@ public class RebalancingEngineService : IRebalancingEngineService
             currentWealth = customer.TradingAccount.Balance + 
                             customer.TradingAccount.Custodies.Sum(c => c.Quantity * tickers[c.Symbol].CurrentPrice);
 
-            foreach (var item in recommendationBasket.Itens)
+            var itensOrdenados = recommendationBasket.Itens
+            .OrderBy(item => {
+                var custodia = customer.TradingAccount.Custodies.FirstOrDefault(c => c.Symbol == item.Symbol);
+                if (custodia == null) return 0;
+                
+                return (custodia.Quantity * tickers[item.Symbol].CurrentPrice) / currentWealth;
+            })
+            .ToList();
+            
+            foreach (var item in itensOrdenados)
             {
                 var ticker = tickers[item.Symbol];
                 var customerCustody = customer.TradingAccount.Custodies.FirstOrDefault(c => c.Symbol == item.Symbol);
@@ -135,7 +146,9 @@ public class RebalancingEngineService : IRebalancingEngineService
                 
                 decimal targetWeight = item.Percentage / 100m;
 
-                if (currentWeight < (targetWeight - THRESHOLD))
+
+                if (currentWeight < targetWeight && customer.TradingAccount.Balance >= ticker.CurrentPrice)
+                //if (currentWeight < (targetWeight - THRESHOLD))
                 {
                     decimal targetValue = targetWeight * currentWealth;
                     decimal currentValue = currentWeight * currentWealth;
@@ -146,11 +159,12 @@ public class RebalancingEngineService : IRebalancingEngineService
 
                     if (quantityToBuy > 0)
                     {
-                            var orders = await _purchaseOrderService.CreatePurchaseOrder(customer.TradingAccount.Id, ticker.Symbol, quantityToBuy, ticker.CurrentPrice);
-                            decimal buyOperationValue = quantityToBuy * ticker.CurrentPrice;
-                            customer.TradingAccount.DebitBalance(buyOperationValue);
-                            customer.TradingAccount.AddCustody(ticker.Symbol, quantityToBuy, ticker.CurrentPrice);
-                            await _taxService.PostTaxInKafkaAsync(customer,ticker.Symbol,buyOperationValue,_taxService.CalculateRetentionTax(buyOperationValue),TaxType.DedoDuro);
+                        hasTrigger = true;
+                        var orders = await _purchaseOrderService.CreatePurchaseOrder(customer.TradingAccount.Id, ticker.Symbol, quantityToBuy, ticker.CurrentPrice);
+                        decimal buyOperationValue = quantityToBuy * ticker.CurrentPrice;
+                        customer.TradingAccount.DebitBalance(buyOperationValue);
+                        customer.TradingAccount.AddCustody(ticker.Symbol, quantityToBuy, ticker.CurrentPrice);
+                        await _taxService.PostTaxInKafkaAsync(customer,ticker.Symbol,buyOperationValue,_taxService.CalculateRetentionTax(buyOperationValue),TaxType.DedoDuro);
                     }
                 }
             }
@@ -159,6 +173,6 @@ public class RebalancingEngineService : IRebalancingEngineService
         }
 
         await _customerRepository.SaveChangesAsync();
-        return true;
+        return hasTrigger;
     }
 }

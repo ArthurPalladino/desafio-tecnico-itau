@@ -5,12 +5,17 @@ public class CustomerService : ICustomerService
     private readonly ICustomerRepository _customerRepository;
     private readonly ITradingAccountRepository _tradingAccountRepository;
     private readonly IContributionHistoryRepository _historyRepository;
+    private readonly ITickerRepository _tickerRepository;
 
-    public CustomerService(ICustomerRepository customerRepository, ITradingAccountRepository tradingAccountRepository, IContributionHistoryRepository historyRepository)
+    public CustomerService(ICustomerRepository customerRepository,
+    ITradingAccountRepository tradingAccountRepository,
+    IContributionHistoryRepository historyRepository,
+    ITickerRepository tickerRepository)
     {
         _customerRepository = customerRepository;
         _tradingAccountRepository = tradingAccountRepository;
         _historyRepository = historyRepository;
+        _tickerRepository = tickerRepository;
     }
 
     public async Task<CustomerResponse> CreateAsync(CreateCustomerRequest request)
@@ -141,10 +146,17 @@ public class CustomerService : ICustomerService
         var customer = await _customerRepository.GetCustomerWithPortfolioAsync(customerId);
         if (customer == null) 
             throw new CustomException("CLIENTE_NAO_ENCONTRADO");
-
+        
         var account = customer.TradingAccount;
+        var symbols = account.Custodies.Select(x => x.Symbol).ToList();
+        var currentPrices = await _tickerRepository.GetTickersDictBySymbol(symbols);
+
         decimal totalInvested = account.Custodies.Sum(x => x.Quantity * x.AveragePrice);
-        decimal currentTotalValue = account.Custodies.Sum(x => x.Quantity * (x.AveragePrice * 1.05m));
+        decimal currentTotalValue = account.Custodies.Sum(x => 
+        {
+            decimal precoAtual = currentPrices.GetValueOrDefault(x.Symbol)?.CurrentPrice ?? x.AveragePrice;            
+            return x.Quantity * precoAtual;
+        });
 
         return new PortfolioProfitabilityResponse(
             customer.Id,
