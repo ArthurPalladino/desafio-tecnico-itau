@@ -23,30 +23,20 @@ public class ParserB3CotHist : IParserB3CotHist
         if (!Directory.Exists(baseFolder))
             throw new CustomException("COTACAO_NAO_ENCONTRADA");
 
-        var datesInDb = await _tickerRepository.GetDistinctDatesAsync();
-        var hashedDatesInDb = new HashSet<DateTime>(datesInDb);
-
-        var files = Directory.GetFiles(baseFolder, "COTAHIST_D*.TXT");
+        var files = Directory.GetFiles(baseFolder, "COTAHIST_*.TXT");
 
         foreach (var filePath in files)
         {
-            var fileName = Path.GetFileName(filePath);
-            if (DateTime.TryParseExact(fileName.Substring(10, 8), "ddMMyyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fileDate))
-            {
-                if (!hashedDatesInDb.Contains(fileDate))
-                {
-                    await ProcessFileAsync(filePath, fileDate);
-                }
-            }
+            await ProcessFileAsync(filePath);
         }
     }
 
-    private async Task ProcessFileAsync(string filePath, DateTime fileDate)
+    private async Task ProcessFileAsync(string filePath)
     {
         var encoding = Encoding.GetEncoding("ISO-8859-1");
         var lines = File.ReadLines(filePath, encoding).ToList();
 
-        var existingTickersDict = await _tickerRepository.GetTickersByDateDictAsync(fileDate);
+        var dailyCaches = new Dictionary<DateTime, Dictionary<string, Ticker>>();
         var newTickersToInsert = new List<Ticker>();
 
         foreach (var line in lines)
@@ -54,14 +44,23 @@ public class ParserB3CotHist : IParserB3CotHist
             if (line.Length < 245 || !line.StartsWith("01"))
                 continue;
 
+            if (!DateTime.TryParseExact(line.Substring(2, 8), "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime rowDate))
+                continue;
+
+            if (!dailyCaches.TryGetValue(rowDate, out var existingTickersDict))
+            {
+                existingTickersDict = await _tickerRepository.GetTickersByDateDictAsync(rowDate);
+                dailyCaches[rowDate] = existingTickersDict;
+            }
+
             var symbol = line.Substring(12, 12).Trim().ToUpperInvariant();
             var closingPrice = ParsePrice(line.Substring(108, 13));
 
             if (!existingTickersDict.ContainsKey(symbol))
             {
-                var newEntry = new Ticker(symbol, closingPrice, fileDate);
+                var newEntry = new Ticker(symbol, closingPrice, rowDate);
                 newTickersToInsert.Add(newEntry);
-                existingTickersDict.Add(symbol, newEntry);
+                existingTickersDict.Add(symbol, newEntry); 
             }
         }
 
