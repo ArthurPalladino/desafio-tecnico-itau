@@ -20,6 +20,8 @@ namespace Data
         public DbSet<TaxEvent> TaxEvents { get; set; } = null!;
         public DbSet<Rebalancing> Rebalancings { get; set; } = null!;
 
+        public DbSet<ContributionHistory> ContributionHistory { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
