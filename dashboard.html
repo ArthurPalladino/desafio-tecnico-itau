@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Itaú Top Five - Dashboard</title>
+  <meta name="description" content="Dashboard Itaú Top Five" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            itau: { orange: '#EC7000', 'orange-hover': '#d55a00', navy: '#003399', 'navy-light': '#0044cc', gray: '#F2F2F2' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .itau-table th { background: #003399; color: #fff; }
+    .itau-table tr:nth-child(even) { background: #F2F2F2; }
+    .spinner { width: 32px; height: 32px; border: 4px solid rgba(236,112,0,0.3); border-top-color: #EC7000; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .nav-item { transition: background 0.15s; }
+    .nav-item:hover { background: #0044cc; }
+    .nav-item.active { background: #EC7000; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 m-0">
+
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside class="w-[250px] bg-itau-navy flex-shrink-0 flex flex-col fixed h-full">
+    <div class="p-6">
+      <h1 class="text-2xl font-extrabold text-itau-orange">Itaú</h1>
+      <p class="text-xs text-white/70 mt-1">Top Five Dashboard</p>
+    </div>
+    <nav class="flex-1 px-3 space-y-1" id="sidebar-nav">
+      <button onclick="switchTab('cestas')" data-tab="cestas" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white text-left">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+        Cestas
+      </button>
+      <button onclick="switchTab('clientes')" data-tab="clientes" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white text-left">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Clientes
+      </button>
+      <button onclick="switchTab('operacoes')" data-tab="operacoes" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white text-left">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Operações / Motor
+      </button>
+      <button onclick="switchTab('master')" data-tab="master" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white text-left">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Master / Histórico
+      </button>
+    </nav>
+    <div class="p-4 text-xs text-white/50">© 2026 Itaú Top Five</div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 ml-[250px] p-8">
+
+    <!-- ==================== ABA CESTAS ==================== -->
+    <div id="tab-cestas" class="tab-content active">
+      <h2 class="text-2xl font-bold mb-6">Cestas de Recomendação</h2>
+
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Cesta Ativa</h3>
+        <div id="cesta-ativa-loading" class="flex justify-center p-8"><div class="spinner"></div></div>
+        <div id="cesta-ativa-content" class="hidden">
+          <div class="flex gap-6 mb-4 text-sm" id="cesta-ativa-info"></div>
+          <table class="itau-table w-full text-sm">
+            <thead><tr><th class="px-4 py-3 text-left rounded-tl-lg">Ticker</th><th class="px-4 py-3 text-left">Percentual</th><th class="px-4 py-3 text-left rounded-tr-lg">Cotação Atual</th></tr></thead>
+            <tbody id="cesta-ativa-tbody"></tbody>
+          </table>
+        </div>
+        <div id="cesta-ativa-error" class="hidden text-red-500 text-sm"></div>
+      </div>
+
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Criar Nova Cesta</h3>
+        <div class="space-y-3">
+          <input id="cesta-nome" type="text" placeholder="Nome da cesta" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <div id="cesta-itens-container">
+            <div class="flex gap-3 items-center cesta-item-row">
+              <input type="text" placeholder="Ticker (ex: PETR4)" class="cesta-ticker flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+              <input type="number" placeholder="Peso (%)" class="cesta-peso w-32 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+              <button onclick="removeCestaItem(this)" class="text-red-500 hover:text-red-700 p-2 hidden">✕</button>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <button onclick="addCestaItem()" class="border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition">+ Adicionar Ativo</button>
+            <button onclick="criarCesta()" id="btn-criar-cesta" class="bg-itau-orange text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-itau-orange-hover transition">Criar Cesta</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg p-5 shadow-sm">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Histórico de Cestas</h3>
+        <div id="cesta-hist-loading" class="flex justify-center p-8"><div class="spinner"></div></div>
+        <div id="cesta-hist-content" class="hidden">
+          <table class="itau-table w-full text-sm">
+            <thead><tr><th class="px-4 py-3 text-left rounded-tl-lg">ID</th><th class="px-4 py-3 text-left">Nome</th><th class="px-4 py-3 text-left">Ativa</th><th class="px-4 py-3 text-left">Criação</th><th class="px-4 py-3 text-left">Desativação</th><th class="px-4 py-3 text-left rounded-tr-lg">Itens</th></tr></thead>
+            <tbody id="cesta-hist-tbody"></tbody>
+          </table>
+        </div>
+        <div id="cesta-hist-error" class="hidden text-red-500 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- ==================== ABA CLIENTES ==================== -->
+    <div id="tab-clientes" class="tab-content">
+      <h2 class="text-2xl font-bold mb-6">Clientes</h2>
+
+      <!-- Adesão de Cliente -->
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Adesão de Novo Cliente</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <input id="adesao-nome" type="text" placeholder="Nome" class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <input id="adesao-cpf" type="text" placeholder="CPF" class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <input id="adesao-email" type="email" placeholder="Email" class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <input id="adesao-valor" type="number" step="0.01" placeholder="Valor Mensal (R$)" class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+        </div>
+        <button onclick="criarCliente()" id="btn-adesao" class="bg-itau-orange text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-itau-orange-hover transition">Cadastrar Cliente</button>
+        <div id="adesao-result" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-sm"></div>
+      </div>
+
+      <!-- Saída de Cliente -->
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Saída de Cliente</h3>
+        <div class="flex gap-3">
+          <input id="saida-id" type="number" placeholder="ID do Cliente" class="w-48 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <button onclick="saidaCliente()" id="btn-saida" class="bg-red-600 text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-red-700 transition">Registrar Saída</button>
+        </div>
+        <div id="saida-result" class="hidden mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm"></div>
+      </div>
+
+      <!-- Alterar Valor Mensal -->
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Alterar Valor Mensal</h3>
+        <div class="flex gap-3">
+          <input id="update-id" type="number" placeholder="ID do Cliente" class="w-48 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <input id="update-valor" type="number" step="0.01" placeholder="Novo Valor (R$)" class="w-48 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <button onclick="alterarValor()" id="btn-update" class="bg-itau-navy text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-itau-navy-light transition">Alterar Valor</button>
+        </div>
+        <div id="update-result" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm"></div>
+      </div>
+
+      <!-- Buscar Cliente -->
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Buscar Cliente</h3>
+        <div class="flex gap-3">
+          <input id="cliente-id-input" type="number" placeholder="ID do Cliente" class="w-48 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          <button onclick="buscarCliente()" class="bg-itau-orange text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-itau-orange-hover transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Buscar
+          </button>
+        </div>
+      </div>
+
+      <div id="cliente-carteira-section" class="hidden">
+        <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+          <h3 class="text-lg font-semibold text-itau-navy mb-4">Carteira do Cliente</h3>
+          <div id="cliente-loading" class="flex justify-center p-8"><div class="spinner"></div></div>
+          <div id="cliente-content" class="hidden">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="cliente-kpis"></div>
+            <table class="itau-table w-full text-sm">
+              <thead><tr><th class="px-4 py-3 text-left rounded-tl-lg">Ticker</th><th class="px-4 py-3 text-left">Qtd</th><th class="px-4 py-3 text-left">Preço Médio</th><th class="px-4 py-3 text-left">Cotação Atual</th><th class="px-4 py-3 text-left">Valor Atual</th><th class="px-4 py-3 text-left">P&amp;L</th><th class="px-4 py-3 text-left">P&amp;L %</th><th class="px-4 py-3 text-left rounded-tr-lg">Composição</th></tr></thead>
+              <tbody id="cliente-carteira-tbody"></tbody>
+            </table>
+          </div>
+          <div id="cliente-error" class="hidden text-red-500 text-sm"></div>
+        </div>
+
+        <div class="bg-white rounded-lg p-5 shadow-sm">
+          <h3 class="text-lg font-semibold text-itau-navy mb-4">Evolução da Carteira</h3>
+          <div id="chart-loading" class="flex justify-center p-8"><div class="spinner"></div></div>
+          <div id="chart-container" class="hidden">
+            <canvas id="rentabilidade-chart" height="300"></canvas>
+          </div>
+          <div id="chart-empty" class="hidden text-gray-500 text-sm">Nenhum dado de evolução disponível.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ABA OPERAÇÕES ==================== -->
+    <div id="tab-operacoes" class="tab-content">
+      <h2 class="text-2xl font-bold mb-6">Operações / Motor de Compra</h2>
+
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Executar Motor</h3>
+        <div class="flex gap-3 items-end">
+          <div>
+            <label class="text-sm text-gray-500 mb-1 block">Data Referência</label>
+            <input id="motor-data" type="date" class="w-48 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" />
+          </div>
+          <button onclick="executarMotor()" id="btn-motor" class="bg-itau-orange text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-itau-orange-hover transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Executar Motor
+          </button>
+        </div>
+      </div>
+
+      <!-- Ações Manuais -->
+      <div class="bg-white rounded-lg p-5 shadow-sm mb-6">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Ações Manuais</h3>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="parseB3()" id="btn-parseb3" class="bg-itau-navy text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-itau-navy-light transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Parse B3 (Cotações)
+          </button>
+          <button onclick="executarRebalanceamento()" id="btn-rebalance" class="bg-itau-navy text-white rounded-lg px-6 py-2 text-sm font-medium hover:bg-itau-navy-light transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            Rebalanceamento
+          </button>
+        </div>
+        <div id="manual-action-result" class="hidden mt-4 p-4 rounded-lg text-sm"></div>
+      </div>
+
+      <div id="motor-loading" class="hidden flex justify-center p-8"><div class="spinner"></div></div>
+      <div id="motor-results" class="hidden space-y-6"></div>
+    </div>
+
+    <!-- ==================== ABA MASTER ==================== -->
+    <div id="tab-master" class="tab-content">
+      <h2 class="text-2xl font-bold mb-6">Master / Histórico</h2>
+
+      <div id="master-kpis" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+
+      <div class="bg-white rounded-lg p-5 shadow-sm">
+        <h3 class="text-lg font-semibold text-itau-navy mb-4">Custódia Master</h3>
+        <div id="master-loading" class="flex justify-center p-8"><div class="spinner"></div></div>
+        <div id="master-content" class="hidden">
+          <table class="itau-table w-full text-sm">
+            <thead><tr><th class="px-4 py-3 text-left rounded-tl-lg">Ticker</th><th class="px-4 py-3 text-left">Quantidade</th><th class="px-4 py-3 text-left">Preço Médio</th><th class="px-4 py-3 text-left">Valor Atual</th><th class="px-4 py-3 text-left rounded-tr-lg">Origem</th></tr></thead>
+            <tbody id="master-tbody"></tbody>
+          </table>
+        </div>
+        <div id="master-error" class="hidden text-red-500 text-sm"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const BASE_URL = 'https://localhost:7239';
+let rentChart = null;
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+
+  // Recarrega os dados da aba ao trocar
+  if (tab === 'cestas') { loadCestaAtual(); loadCestaHistorico(); }
+  else if (tab === 'clientes') { /* dados carregam sob demanda via busca */ }
+  else if (tab === 'operacoes') { /* dados carregam sob demanda via execução */ }
+  else if (tab === 'master') { loadMaster(); }
+}
+
+async function apiFetch(url, options) {
+  options = options || {};
+  const res = await fetch(BASE_URL + url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(function() { return ''; });
+    throw new Error(text || 'Erro ' + res.status);
+  }
+  return res.json();
+}
+
+function showToast(msg, type) {
+  type = type || 'success';
+  var toast = document.createElement('div');
+  toast.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white text-sm font-medium shadow-lg transition-opacity ' + (type === 'success' ? 'bg-green-600' : 'bg-red-600');
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 3000);
+}
+
+function formatDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
+function formatBRL(v) { return v != null ? 'R$ ' + v.toFixed(2) : '—'; }
+
+// ---- CESTAS ----
+async function loadCestaAtual() {
+  try {
+    var data = await apiFetch('/api/admin/cesta/atual');
+    document.getElementById('cesta-ativa-loading').classList.add('hidden');
+    document.getElementById('cesta-ativa-content').classList.remove('hidden');
+    document.getElementById('cesta-ativa-info').innerHTML =
+      '<span><strong>Nome:</strong> ' + data.nome + '</span><span><strong>ID:</strong> ' + data.cestaId + '</span><span><strong>Criação:</strong> ' + formatDate(data.dataCriacao) + '</span>';
+    document.getElementById('cesta-ativa-tbody').innerHTML = (data.itens || []).map(function(i) {
+      return '<tr><td class="px-4 py-3 font-mono font-semibold">' + i.ticker + '</td><td class="px-4 py-3">' + i.percentual.toFixed(1) + '%</td><td class="px-4 py-3">' + formatBRL(i.cotacaoAtual) + '</td></tr>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('cesta-ativa-loading').classList.add('hidden');
+    document.getElementById('cesta-ativa-error').classList.remove('hidden');
+    document.getElementById('cesta-ativa-error').textContent = 'Erro ao carregar cesta ativa. Verifique a conexão com a API.';
+  }
+}
+
+async function loadCestaHistorico() {
+  try {
+    var data = await apiFetch('/api/admin/cesta/historico');
+    document.getElementById('cesta-hist-loading').classList.add('hidden');
+    document.getElementById('cesta-hist-content').classList.remove('hidden');
+    document.getElementById('cesta-hist-tbody').innerHTML = (data.cestas || []).map(function(c) {
+      return '<tr><td class="px-4 py-3">' + c.cestaId + '</td><td class="px-4 py-3">' + c.nome + '</td><td class="px-4 py-3">' + (c.ativa ? '✅' : '❌') + '</td><td class="px-4 py-3">' + formatDate(c.dataCriacao) + '</td><td class="px-4 py-3">' + formatDate(c.dataDesativacao) + '</td><td class="px-4 py-3">' + (c.itens || []).map(function(i) { return i.ticker; }).join(', ') + '</td></tr>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('cesta-hist-loading').classList.add('hidden');
+    document.getElementById('cesta-hist-error').classList.remove('hidden');
+    document.getElementById('cesta-hist-error').textContent = 'Erro ao carregar histórico.';
+  }
+}
+
+function addCestaItem() {
+  var container = document.getElementById('cesta-itens-container');
+  var row = document.createElement('div');
+  row.className = 'flex gap-3 items-center cesta-item-row mt-3';
+  row.innerHTML = '<input type="text" placeholder="Ticker (ex: PETR4)" class="cesta-ticker flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" /><input type="number" placeholder="Peso (%)" class="cesta-peso w-32 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" /><button onclick="removeCestaItem(this)" class="text-red-500 hover:text-red-700 p-2 text-lg">✕</button>';
+  container.appendChild(row);
+}
+
+function removeCestaItem(btn) { btn.closest('.cesta-item-row').remove(); }
+
+async function criarCesta() {
+  var nome = document.getElementById('cesta-nome').value;
+  if (!nome) return showToast('Informe o nome da cesta', 'error');
+  var rows = document.querySelectorAll('.cesta-item-row');
+  var itens = [];
+  rows.forEach(function(row) {
+    var ticker = row.querySelector('.cesta-ticker').value.trim();
+    var peso = parseFloat(row.querySelector('.cesta-peso').value);
+    if (ticker && !isNaN(peso)) itens.push({ ticker: ticker, percentual: peso });
+  });
+  if (!itens.length) return showToast('Adicione pelo menos um ativo', 'error');
+  var btn = document.getElementById('btn-criar-cesta');
+  btn.disabled = true; btn.textContent = 'Criando...';
+  try {
+    var data = await apiFetch('/api/admin/cesta', { method: 'POST', body: JSON.stringify({ nome: nome, itens: itens }) });
+    showToast(data.mensagem || 'Cesta criada com sucesso!');
+    document.getElementById('cesta-nome').value = '';
+    document.getElementById('cesta-itens-container').innerHTML = '<div class="flex gap-3 items-center cesta-item-row"><input type="text" placeholder="Ticker (ex: PETR4)" class="cesta-ticker flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" /><input type="number" placeholder="Peso (%)" class="cesta-peso w-32 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-itau-orange" /><button onclick="removeCestaItem(this)" class="text-red-500 hover:text-red-700 p-2 hidden">✕</button></div>';
+    loadCestaAtual(); loadCestaHistorico();
+  } catch (e) { showToast(e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Criar Cesta';
+}
+
+// ---- CLIENTES: Adesão, Saída, Alterar Valor ----
+async function criarCliente() {
+  var nome = document.getElementById('adesao-nome').value.trim();
+  var cpf = document.getElementById('adesao-cpf').value.trim();
+  var email = document.getElementById('adesao-email').value.trim();
+  var valor = parseFloat(document.getElementById('adesao-valor').value);
+  if (!nome || !cpf || !email || isNaN(valor)) return showToast('Preencha todos os campos', 'error');
+  var btn = document.getElementById('btn-adesao');
+  btn.disabled = true; btn.textContent = 'Cadastrando...';
+  try {
+    var data = await apiFetch('/api/clientes/adesao', { method: 'POST', body: JSON.stringify({ nome: nome, cpf: cpf, email: email, valorMensal: valor }) });
+    var el = document.getElementById('adesao-result');
+    el.classList.remove('hidden');
+    el.innerHTML = '<strong>Cliente criado!</strong> ID: ' + data.clienteId + ' | Nome: ' + data.nome + ' | Conta: ' + (data.contaGrafica ? data.contaGrafica.numeroConta : '—') + ' | Data Adesão: ' + formatDate(data.dataAdesao);
+    showToast('Cliente cadastrado com sucesso!');
+    document.getElementById('adesao-nome').value = '';
+    document.getElementById('adesao-cpf').value = '';
+    document.getElementById('adesao-email').value = '';
+    document.getElementById('adesao-valor').value = '';
+  } catch (e) { showToast(e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Cadastrar Cliente';
+}
+
+async function saidaCliente() {
+  var id = parseInt(document.getElementById('saida-id').value);
+  if (isNaN(id)) return showToast('Informe um ID válido', 'error');
+  var btn = document.getElementById('btn-saida');
+  btn.disabled = true; btn.textContent = 'Processando...';
+  try {
+    var data = await apiFetch('/api/clientes/' + id + '/saida', { method: 'POST' });
+    var el = document.getElementById('saida-result');
+    el.classList.remove('hidden');
+    el.innerHTML = '<strong>' + data.mensagem + '</strong> | Cliente: ' + data.nome + ' | Ativo: ' + (data.ativo ? 'Sim' : 'Não') + ' | Data Saída: ' + formatDate(data.dataSaida);
+    showToast(data.mensagem || 'Saída registrada!');
+  } catch (e) { showToast(e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Registrar Saída';
+}
+
+async function alterarValor() {
+  var id = parseInt(document.getElementById('update-id').value);
+  var valor = parseFloat(document.getElementById('update-valor').value);
+  if (isNaN(id) || isNaN(valor)) return showToast('Preencha ID e novo valor', 'error');
+  var btn = document.getElementById('btn-update');
+  btn.disabled = true; btn.textContent = 'Alterando...';
+  try {
+    var data = await apiFetch('/api/clientes/' + id + '/valor-mensal', { method: 'PUT', body: JSON.stringify(valor) });
+    var el = document.getElementById('update-result');
+    el.classList.remove('hidden');
+    el.innerHTML = '<strong>' + data.mensagem + '</strong> | Anterior: ' + formatBRL(data.valorMensalAnterior) + ' → Novo: ' + formatBRL(data.valorMensalNovo) + ' | Data: ' + formatDate(data.dataAlteracao);
+    showToast(data.mensagem || 'Valor alterado!');
+  } catch (e) { showToast(e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Alterar Valor';
+}
+
+// ---- CLIENTES: Buscar Carteira ----
+async function buscarCliente() {
+  var id = parseInt(document.getElementById('cliente-id-input').value);
+  if (isNaN(id)) return showToast('Informe um ID válido', 'error');
+  document.getElementById('cliente-carteira-section').classList.remove('hidden');
+  document.getElementById('cliente-loading').classList.remove('hidden');
+  document.getElementById('cliente-content').classList.add('hidden');
+  document.getElementById('cliente-error').classList.add('hidden');
+  document.getElementById('chart-loading').classList.remove('hidden');
+  document.getElementById('chart-container').classList.add('hidden');
+  document.getElementById('chart-empty').classList.add('hidden');
+
+  try {
+    var data = await apiFetch('/api/clientes/' + id + '/carteira');
+    document.getElementById('cliente-loading').classList.add('hidden');
+    document.getElementById('cliente-content').classList.remove('hidden');
+    var r = data.resumo || {};
+    document.getElementById('cliente-kpis').innerHTML =
+      kpiCard('Total Investido', formatBRL(r.valorTotalInvestido)) +
+      kpiCard('Valor Atual', formatBRL(r.valorAtualCarteira)) +
+      kpiCard('P&L Total', formatBRL(r.plTotal), true) +
+      kpiCard('Rentabilidade', (r.rentabilidadePercentual != null ? r.rentabilidadePercentual.toFixed(2) : '0') + '%', true);
+    document.getElementById('cliente-carteira-tbody').innerHTML = (data.ativos || []).map(function(a) {
+      var plColor = a.pl >= 0 ? 'text-green-600' : 'text-red-600';
+      return '<tr><td class="px-4 py-3 font-mono font-semibold">' + a.ticker + '</td><td class="px-4 py-3">' + a.quantidade + '</td><td class="px-4 py-3">' + formatBRL(a.precoMedio) + '</td><td class="px-4 py-3">' + formatBRL(a.cotacaoAtual) + '</td><td class="px-4 py-3">' + formatBRL(a.valorAtual) + '</td><td class="px-4 py-3 ' + plColor + '">' + formatBRL(a.pl) + '</td><td class="px-4 py-3 ' + plColor + '">' + (a.plPercentual != null ? a.plPercentual.toFixed(2) : '0') + '%</td><td class="px-4 py-3">' + (a.composicaoCarteira != null ? a.composicaoCarteira.toFixed(1) : '0') + '%</td></tr>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('cliente-loading').classList.add('hidden');
+    document.getElementById('cliente-error').classList.remove('hidden');
+    document.getElementById('cliente-error').textContent = 'Erro ao buscar carteira. Verifique o ID e a conexão.';
+  }
+
+  try {
+    var data2 = await apiFetch('/api/clientes/' + id + '/rentabilidade');
+    document.getElementById('chart-loading').classList.add('hidden');
+    if (data2.evolucaoCarteira && data2.evolucaoCarteira.length) {
+      document.getElementById('chart-container').classList.remove('hidden');
+      renderChart(data2.evolucaoCarteira);
+    } else {
+      document.getElementById('chart-empty').classList.remove('hidden');
+    }
+  } catch (e) {
+    document.getElementById('chart-loading').classList.add('hidden');
+    document.getElementById('chart-empty').classList.remove('hidden');
+  }
+}
+
+function kpiCard(label, value, highlight) {
+  var bg = highlight ? 'bg-orange-50 border border-orange-200' : 'bg-gray-100';
+  var textColor = highlight ? 'text-itau-orange' : 'text-gray-800';
+  return '<div class="' + bg + ' rounded-lg p-4"><p class="text-xs text-gray-500 mb-1">' + label + '</p><p class="text-lg font-bold ' + textColor + '">' + value + '</p></div>';
+}
+
+function renderChart(evolucao) {
+  var ctx = document.getElementById('rentabilidade-chart').getContext('2d');
+  if (rentChart) rentChart.destroy();
+  rentChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: evolucao.map(function(e) { return e.data; }),
+      datasets: [
+        { label: 'Valor Carteira', data: evolucao.map(function(e) { return e.valorCarteira; }), borderColor: '#EC7000', backgroundColor: 'rgba(236,112,0,0.1)', fill: true, tension: 0.3, borderWidth: 2 },
+        { label: 'Valor Investido', data: evolucao.map(function(e) { return e.valorInvestido; }), borderColor: '#003399', backgroundColor: 'rgba(0,51,153,0.1)', fill: true, tension: 0.3, borderWidth: 2 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } } }
+  });
+}
+
+// ---- AÇÕES MANUAIS ----
+async function parseB3() {
+  var btn = document.getElementById('btn-parseb3');
+  btn.disabled = true; btn.textContent = 'Executando...';
+  var el = document.getElementById('manual-action-result');
+  el.classList.add('hidden');
+  try {
+    var res = await fetch(BASE_URL + '/api/admin/acoes-manuais/parseb3');
+    var text = await res.text();
+    el.classList.remove('hidden');
+    el.className = 'mt-4 p-4 rounded-lg text-sm ' + (res.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800');
+    el.textContent = text;
+    showToast(res.ok ? 'Parse B3 executado!' : text, res.ok ? 'success' : 'error');
+  } catch (e) { showToast(e.message, 'error'); }
+  btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Parse B3 (Cotações)';
+}
+
+async function executarRebalanceamento() {
+  var btn = document.getElementById('btn-rebalance');
+  btn.disabled = true; btn.textContent = 'Executando...';
+  var el = document.getElementById('manual-action-result');
+  el.classList.add('hidden');
+  try {
+    var res = await fetch(BASE_URL + '/api/admin/acoes-manuais/rebalance-engine');
+    var text = await res.text();
+    el.classList.remove('hidden');
+    el.className = 'mt-4 p-4 rounded-lg text-sm ' + (res.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800');
+    el.textContent = text;
+    showToast(res.ok ? 'Rebalanceamento executado!' : text, res.ok ? 'success' : 'error');
+  } catch (e) { showToast(e.message, 'error'); }
+  btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Rebalanceamento';
+}
+
+
+async function executarMotor() {
+  var data = document.getElementById('motor-data').value;
+  if (!data) return showToast('Informe a data de referência', 'error');
+  var btn = document.getElementById('btn-motor');
+  btn.disabled = true; btn.textContent = 'Executando...';
+  document.getElementById('motor-loading').classList.remove('hidden');
+  document.getElementById('motor-results').classList.add('hidden');
+
+  try {
+    var result = await apiFetch('/api/motor/executar-compra?dataReferencia=' + data, { method: 'POST' });
+    document.getElementById('motor-loading').classList.add('hidden');
+    document.getElementById('motor-results').classList.remove('hidden');
+
+    var html = '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">' +
+      kpiCardSimple('Total Clientes', result.totalClientes) +
+      kpiCardSimple('Total Consolidado', formatBRL(result.totalConsolidado)) +
+      kpiCardSimple('Eventos IR', result.eventosIRPublicados) +
+      kpiCardSimple('Mensagem', result.mensagem || '—') + '</div>';
+
+    html += '<div class="bg-white rounded-lg p-5 shadow-sm"><h3 class="text-lg font-semibold text-itau-navy mb-4">Ordens de Compra</h3><table class="itau-table w-full text-sm"><thead><tr><th class="px-4 py-3 text-left rounded-tl-lg">Ticker</th><th class="px-4 py-3 text-left">Qtd Total</th><th class="px-4 py-3 text-left">Preço Unit.</th><th class="px-4 py-3 text-left rounded-tr-lg">Valor Total</th></tr></thead><tbody>';
+    (result.ordensCompra || []).forEach(function(o) { html += '<tr><td class="px-4 py-3 font-mono font-semibold">' + o.ticker + '</td><td class="px-4 py-3">' + o.quantidadeTotal + '</td><td class="px-4 py-3">' + formatBRL(o.precoUnitario) + '</td><td class="px-4 py-3">' + formatBRL(o.valorTotal) + '</td></tr>'; });
+    html += '</tbody></table></div>';
+
+    html += '<div class="bg-white rounded-lg p-5 shadow-sm"><h3 class="text-lg font-semibold text-itau-navy mb-4">Distribuições por Cliente</h3><table class="itau-table w-full text-sm"><thead><tr><th class="px-4 py-3 text-left rounded-tl-lg">Cliente ID</th><th class="px-4 py-3 text-left">Nome</th><th class="px-4 py-3 text-left">Valor Aporte</th><th class="px-4 py-3 text-left rounded-tr-lg">Ativos</th></tr></thead><tbody>';
+    (result.distribuicoes || []).forEach(function(d) { html += '<tr><td class="px-4 py-3">' + d.clienteId + '</td><td class="px-4 py-3">' + d.nome + '</td><td class="px-4 py-3">' + formatBRL(d.valorAporte) + '</td><td class="px-4 py-3">' + (d.ativos || []).map(function(a) { return a.ticker + '(' + a.quantidade + ')'; }).join(', ') + '</td></tr>'; });
+    html += '</tbody></table></div>';
+
+    if (result.residuosCustMaster && result.residuosCustMaster.length) {
+      html += '<div class="bg-white rounded-lg p-5 shadow-sm"><h3 class="text-lg font-semibold text-itau-navy mb-4">Resíduos Custódia Master</h3><table class="itau-table w-full text-sm"><thead><tr><th class="px-4 py-3 text-left rounded-tl-lg">Ticker</th><th class="px-4 py-3 text-left rounded-tr-lg">Quantidade</th></tr></thead><tbody>';
+      result.residuosCustMaster.forEach(function(r) { html += '<tr><td class="px-4 py-3 font-mono font-semibold">' + r.ticker + '</td><td class="px-4 py-3">' + r.quantidade + '</td></tr>'; });
+      html += '</tbody></table></div>';
+    }
+
+    document.getElementById('motor-results').innerHTML = html;
+    showToast('Motor executado com sucesso!');
+  } catch (e) {
+    document.getElementById('motor-loading').classList.add('hidden');
+    showToast(e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Executar Motor';
+}
+
+function kpiCardSimple(label, value) {
+  return '<div class="bg-white rounded-lg p-4 shadow-sm"><p class="text-xs text-gray-500 mb-1">' + label + '</p><p class="text-lg font-bold text-gray-800">' + value + '</p></div>';
+}
+
+// ---- MASTER ----
+async function loadMaster() {
+  try {
+    var data = await apiFetch('/api/admin/conta-master/custodia');
+    document.getElementById('master-loading').classList.add('hidden');
+    document.getElementById('master-content').classList.remove('hidden');
+    document.getElementById('master-kpis').innerHTML =
+      '<div class="bg-white rounded-lg p-5 shadow-sm"><p class="text-xs text-gray-500 mb-1">Conta Master</p><p class="text-lg font-bold">' + (data.contaMaster ? data.contaMaster.numeroConta : '—') + '</p><p class="text-xs text-gray-500">Tipo: ' + (data.contaMaster ? data.contaMaster.tipo : '—') + '</p></div>' +
+      '<div class="bg-white rounded-lg p-5 shadow-sm"><p class="text-xs text-gray-500 mb-1">Valor Total Resíduo</p><p class="text-lg font-bold text-itau-orange">' + formatBRL(data.valorTotalResiduo) + '</p></div>' +
+      '<div class="bg-white rounded-lg p-5 shadow-sm"><p class="text-xs text-gray-500 mb-1">Ativos em Custódia</p><p class="text-lg font-bold">' + (data.custodia ? data.custodia.length : 0) + '</p></div>';
+    document.getElementById('master-tbody').innerHTML = (data.custodia || []).map(function(c) {
+      return '<tr><td class="px-4 py-3 font-mono font-semibold">' + c.ticker + '</td><td class="px-4 py-3">' + c.quantidade + '</td><td class="px-4 py-3">' + formatBRL(c.precoMedio) + '</td><td class="px-4 py-3">' + formatBRL(c.valorAtual) + '</td><td class="px-4 py-3">' + c.origem + '</td></tr>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('master-loading').classList.add('hidden');
+    document.getElementById('master-error').classList.remove('hidden');
+    document.getElementById('master-error').textContent = 'Erro ao carregar custódia. Verifique a conexão com a API.';
+  }
+}
+
+// ---- Init ----
+document.getElementById('motor-data').value = new Date().toISOString().split('T')[0];
+document.getElementById('cliente-id-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') buscarCliente(); });
+loadCestaAtual();
+loadCestaHistorico();
+loadMaster();
+</script>
+
+</body>
+</html>
