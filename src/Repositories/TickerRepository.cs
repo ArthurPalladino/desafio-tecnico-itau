@@ -39,7 +39,9 @@ public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticke
 
     public async Task<Dictionary<string, Ticker>> GetTickersDictByLastDate()
     {
-        var lastDate = await _dbSet.MaxAsync(t => t.PriceDate);
+        var lastDate = await _dbSet.Select(t => (DateTime?)t.PriceDate).MaxAsync();
+
+        if (lastDate == null) return null;
 
         var tickers = await _dbSet
             .Where(t => t.PriceDate == lastDate)

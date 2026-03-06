@@ -89,17 +89,25 @@ public class RecommendationBasketService : IRecommendationBasketService
         if (basket == null)
             throw new CustomException("CESTA_NAO_ENCONTRADA");
 
+        var symbols = basket.Itens.Select(i => i.Symbol).ToList();
+        var tickersDict = await _tickerRepository.GetTickersDictBySymbol(symbols);
+
         return new BasketAtualResponse
         {
             cestaId = basket.Id,
-            nome = basket.Name,
+            nome = basket.Name ?? "Sem Nome",
             ativa = true,
             dataCriacao = basket.CreatedAt,
-            itens = basket.Itens.Select(i => new BasketItemAtualResponse 
-            { 
-                ticker = i.Symbol, 
-                percentual = i.Percentage,
-                cotacaoAtual = _tickerRepository.GetLatestByTickerAsync(i.Symbol).Result.CurrentPrice
+            itens = basket.Itens.Select(i =>
+            {
+                var tickerInfo = tickersDict.GetValueOrDefault(i.Symbol);
+
+                return new BasketItemAtualResponse
+                {
+                    ticker = i.Symbol,
+                    percentual = i.Percentage,
+                    cotacaoAtual = tickerInfo?.CurrentPrice ?? 0m
+                };
             }).ToList()
         };
     }

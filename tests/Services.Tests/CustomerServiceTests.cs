@@ -11,6 +11,8 @@ namespace Tests.Services.Tests
         private readonly Mock<ITradingAccountRepository> _tradingAccountRepoMock;
         private readonly Mock<IContributionHistoryRepository> _historyRepoMock;
         private readonly Mock<ITickerRepository> _tickerRepoMock;
+        private readonly Mock<IPurchaseOrderRepository> _purchaseRepoMock;
+        private readonly Mock<IDistributionRepository> _distributionRepoMock;
         private readonly CustomerService _service;
 
         public CustomerServiceTests()
@@ -19,12 +21,16 @@ namespace Tests.Services.Tests
             _tradingAccountRepoMock = new Mock<ITradingAccountRepository>();
             _historyRepoMock = new Mock<IContributionHistoryRepository>();
             _tickerRepoMock = new Mock<ITickerRepository>();
+            _purchaseRepoMock = new Mock<IPurchaseOrderRepository>();
+            _distributionRepoMock = new Mock<IDistributionRepository>();
 
             _service = new CustomerService(
                 _customerRepoMock.Object,
                 _tradingAccountRepoMock.Object,
                 _historyRepoMock.Object,
-                _tickerRepoMock.Object
+                _tickerRepoMock.Object,
+                _purchaseRepoMock.Object,
+                _distributionRepoMock.Object
             );
         }
 
