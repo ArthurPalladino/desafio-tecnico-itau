@@ -52,9 +52,14 @@ public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticke
 
     public async Task<Dictionary<string, Ticker>> GetTickersDictBySymbol(List<string> symbols)
     {
-        return await _context.Tickers
+        var allTickers = await _context.Tickers
             .Where(t => symbols.Contains(t.Symbol))
-            .ToDictionaryAsync(t => t.Symbol, t => t); 
+            .ToListAsync();
+
+        return allTickers
+            .GroupBy(t => t.Symbol)
+            .Select(g => g.OrderByDescending(t => t.PriceDate).First())
+            .ToDictionary(t => t.Symbol, t => t);
     }
     public async Task<IEnumerable<DateTime>> GetDistinctDatesAsync()
     {

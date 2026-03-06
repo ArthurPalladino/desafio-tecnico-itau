@@ -9,12 +9,16 @@
   <ItemGroup>
     <Compile Remove="DTOs\**" />
     <Compile Remove="Models\**" />
+    <Compile Remove="Parser\**" />
     <Content Remove="DTOs\**" />
     <Content Remove="Models\**" />
+    <Content Remove="Parser\**" />
     <EmbeddedResource Remove="DTOs\**" />
     <EmbeddedResource Remove="Models\**" />
+    <EmbeddedResource Remove="Parser\**" />
     <None Remove="DTOs\**" />
     <None Remove="Models\**" />
+    <None Remove="Parser\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +35,6 @@
     <Folder Include="Data\DbContext\" />
     <Folder Include="Data\Messaging\" />
     <Folder Include="Controllers\" />
-    <Folder Include="Parser\" />
     <Folder Include="Repositories\" />
     <Folder Include="Services\" />
   </ItemGroup>
