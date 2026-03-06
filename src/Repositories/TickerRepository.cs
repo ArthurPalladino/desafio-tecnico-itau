@@ -61,4 +61,22 @@ public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticke
             .Distinct()
             .ToListAsync();
     }
+
+    public async Task<Ticker> GetPriceAtDate(string symbol, DateTime date)
+    {
+        var ticker = await _context.Tickers
+            .Where(t => t.Symbol == symbol && t.PriceDate.Date == date.Date)
+            .OrderByDescending(t => t.PriceDate) 
+            .FirstOrDefaultAsync();
+
+        if (ticker == null)
+        {
+            ticker = await _context.Tickers
+                .Where(t => t.Symbol == symbol && t.PriceDate.Date < date.Date)
+                .OrderByDescending(t => t.PriceDate)
+                .FirstOrDefaultAsync();
+        }
+
+        return ticker;
+    }
 }

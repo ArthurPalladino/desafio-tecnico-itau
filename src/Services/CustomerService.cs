@@ -7,11 +7,18 @@ public class CustomerService : ICustomerService
     private readonly IContributionHistoryRepository _historyRepository;
     private readonly ITickerRepository _tickerRepository;
 
+    private readonly IDistributionRepository _distributionRepository;
+    private readonly IPurchaseOrderRepository _purchaseOrderRepository;
+
     public CustomerService(ICustomerRepository customerRepository,
     ITradingAccountRepository tradingAccountRepository,
     IContributionHistoryRepository historyRepository,
-    ITickerRepository tickerRepository)
+    ITickerRepository tickerRepository,
+    IPurchaseOrderRepository purchaseOrderRepository,
+    IDistributionRepository distributionRepository)
     {
+        _distributionRepository = distributionRepository;
+        _purchaseOrderRepository = purchaseOrderRepository;
         _customerRepository = customerRepository;
         _tradingAccountRepository = tradingAccountRepository;
         _historyRepository = historyRepository;
@@ -173,11 +180,7 @@ public class CustomerService : ICustomerService
             return x.Quantity * precoAtual;
         });
 
-        
-
-
-
-        return new PortfolioProfitabilityResponse(
+        var response = new PortfolioProfitabilityResponse(
             customer.Id,
             customer.Name,
             DateTime.UtcNow,
@@ -187,8 +190,100 @@ public class CustomerService : ICustomerService
                 currentTotalValue - totalInvested,
                 totalInvested > 0 ? ((currentTotalValue / totalInvested) - 1) * 100 : 0
             ),
-            new List<AporteDto>(),
-            new List<EvolucaoDto>()  
+            await GetContributionHistory(customer),
+            await GetEvolutionPatrimony(customer)  
         );
+        return response;
+    }
+
+    private async Task<List<AporteDto>> GetContributionHistory(Customer customer)
+    {
+        var history = await _historyRepository.GetByCustomerIdAsync(customer.Id);
+        var distributions = await _distributionRepository.GetAllDistributionsToChildAccount(customer.TradingAccount.Id);
+        
+        var contributionDays = distributions
+            .Select(d => d.DistributedAt.Date)
+            .Distinct()
+            .OrderBy(date => date)
+            .ToList();
+
+        var aportesFinal = new List<AporteDto>();
+
+        var groupedByMonth = contributionDays
+            .GroupBy(d => new { d.Year, d.Month })
+            .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month);
+
+        foreach (var monthGroup in groupedByMonth)
+        {
+            var daysInMonth = monthGroup.ToList();
+            
+            for (int i = 0; i < daysInMonth.Count; i++)
+            {
+                var currentDay = daysInMonth[i];
+
+                var activeRule = history
+                    .Where(h => h.AlterationDate.Date <= currentDay)
+                    .OrderByDescending(h => h.AlterationDate)
+                    .FirstOrDefault();
+
+                decimal contributionAmount = activeRule?.NewValue ?? customer.MonthlyContribution;
+                
+                int installmentNumber = (i % 3) + 1;
+
+                aportesFinal.Add(new AporteDto(
+                    currentDay.ToString("yyyy-MM-dd"),
+                    Math.Round(contributionAmount, 2),
+                    $"{installmentNumber}/3"
+                ));
+            }
+        }
+
+        return aportesFinal;
+    }
+
+    private async Task<List<EvolucaoDto>> GetEvolutionPatrimony(Customer customer)
+    {
+        TradingAccount account = customer.TradingAccount;
+        var distributions = await _distributionRepository.GetAllDistributionsToChildAccount(account.Id);
+        var purchaseOrders = await _purchaseOrderRepository.GetAllByBuyerId(account.Id);
+
+        var timeline = distributions
+        .Select(d => new { d.DistributedAt.Date, Amount = (decimal)d.Quantity }) 
+        .AsEnumerable() 
+        .Concat(purchaseOrders.Select(o => new { o.ExecutionDate.Date, Amount = o.Quantity * o.UnitPrice }))
+        .GroupBy(x => x.Date)
+        .OrderBy(g => g.Key)
+        .Select(g => new { 
+            Date = g.Key, 
+            DailyNetChange = g.Sum(x => x.Amount) 
+        })
+        .ToList();
+
+        
+        var finalEvolution = new List<EvolucaoDto>();
+        decimal runningTotalInvested = 0;
+
+        foreach (var item in timeline)
+        {
+            runningTotalInvested += item.DailyNetChange;
+            
+            decimal marketValueOnDate = 0;
+            foreach (var asset in customer.TradingAccount.Custodies) 
+            {
+                var historicPrice = await _tickerRepository.GetPriceAtDate(asset.Symbol, item.Date);
+                
+                decimal price = historicPrice != null ? historicPrice.CurrentPrice : asset.AveragePrice;
+                marketValueOnDate += asset.Quantity * price;
+            }
+
+            finalEvolution.Add(new EvolucaoDto(
+                item.Date.ToString("yyyy-MM-dd"),
+                Math.Round(marketValueOnDate, 2),
+                Math.Round(runningTotalInvested, 2),
+                runningTotalInvested > 0 ? Math.Round(((marketValueOnDate / runningTotalInvested) - 1) * 100, 2) : 0
+            ));
+        }
+
+        return finalEvolution;
     }
 }

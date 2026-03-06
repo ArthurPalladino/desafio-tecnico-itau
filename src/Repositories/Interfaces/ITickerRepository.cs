@@ -6,6 +6,7 @@ namespace Repositories.Interfaces
         Task<Ticker?> GetLatestByTickerAsync(string symbol);
         Task<List<string>> GetUniqueSymbols();
 
+        Task<Ticker> GetPriceAtDate(string symbol, DateTime date);
         Task<Dictionary<string, Ticker>> GetTickersDictByLastDate();
         Task<Dictionary<string, Ticker>> GetTickersDictBySymbol(List<string> symbols);
         Task<Dictionary<string, Ticker>> GetTickersByDateDictAsync(DateTime date);

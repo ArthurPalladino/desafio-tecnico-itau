@@ -12,4 +12,11 @@ public class DistributionRepository(ItauTopFiveDbContext dbContext) : Repository
             .OrderByDescending(d => d.DistributedAt)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<IEnumerable<Distribution>> GetAllDistributionsToChildAccount(int childAccountId)
+    {
+        return await _dbSet
+        .Where(d => d.ChildAccountId == childAccountId)
+        .ToListAsync();
+    }
 }

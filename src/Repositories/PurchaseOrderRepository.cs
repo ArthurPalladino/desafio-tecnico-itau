@@ -21,4 +21,11 @@ public class PurchaseOrderRepository(ItauTopFiveDbContext dbContext) : Repositor
                         o.ExecutionDate.Month == month)
             .SumAsync(o => (decimal)Math.Abs(o.Quantity) * o.UnitPrice);
     }
+
+    public async Task<IEnumerable<PurchaseOrder>> GetAllByBuyerId (int buyerId)
+    {
+        return await _dbSet
+            .Where(p => p.MasterAccountId == buyerId) 
+            .ToListAsync();
+    }
 }
