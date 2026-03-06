@@ -56,7 +56,7 @@ public class PurchaseEngineService : IPurchaseEngineService
 
     return data;
 }
-    async Task<int> TickerDistribution(IEnumerable<Customer> customers, Ticker ticker, Custody masterCustody,TradingAccount masterAccount, Dictionary<int, decimal> percentagePerCustomer, PurchaseOrder purchaseOrder, List<Distribution> allDistributions)
+    async Task<int> TickerDistribution(IEnumerable<Customer> customers, Ticker ticker, Custody masterCustody,TradingAccount masterAccount, Dictionary<int, decimal> percentagePerCustomer, PurchaseOrder purchaseOrder, List<Distribution> allDistributions, DateTime distributionDate)
     {
         int events = 0;
         foreach (var customer in customers)
@@ -66,7 +66,7 @@ public class PurchaseEngineService : IPurchaseEngineService
             int customerQuantity = Convert.ToInt32(Math.Floor(customerQuantityDec));
             if (customerQuantity > 0)
             {
-                var distribution = new Distribution(purchaseOrder, customer.TradingAccount.Id, ticker.Symbol, customerQuantity, purchaseOrder.UnitPrice);
+                var distribution = new Distribution(purchaseOrder, customer.TradingAccount.Id, ticker.Symbol, customerQuantity, purchaseOrder.UnitPrice,distributionDate);
                 await _distributionRepository.AddAsync(distribution);
                 allDistributions.Add(distribution);
                 
@@ -142,7 +142,7 @@ public class PurchaseEngineService : IPurchaseEngineService
             {
                 currentOrderRef ??= await _purchaseOrderRepository.GetLastOrderAsync(ticker.Symbol) 
                        ?? throw new CustomException("ORDEM_COMPRA_INVALIDA");
-                totalEvents += await TickerDistribution(customers, ticker, masterCustody,masterAccount, percentagePerCustomer, currentOrderRef, allCreatedDistributions);
+                totalEvents += await TickerDistribution(customers, ticker, masterCustody,masterAccount, percentagePerCustomer, currentOrderRef, allCreatedDistributions,referDate);
                 
                 if(masterCustody.Quantity > 0)
                 {

@@ -7,7 +7,7 @@ namespace Services;
 public class ParserB3CotHist : IParserB3CotHist
 {
     private readonly ITickerRepository _tickerRepository;
-    private readonly string _baseFolder = "cotacao";
+    private readonly string _baseFolder = "cotacoes";
 
     public ParserB3CotHist(ITickerRepository tickerRepository)
     {
@@ -15,28 +15,38 @@ public class ParserB3CotHist : IParserB3CotHist
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
-    public async Task ParseAndSyncDatabaseAsync(DateTime referenceDate)
+    public async Task ParseAndSyncDatabaseAsync()
     {
         string currentDir = Directory.GetCurrentDirectory();
+        string baseFolder = Path.GetFullPath(Path.Combine(currentDir, "..", _baseFolder));
 
-        string baseFolder = Path.GetFullPath(Path.Combine(currentDir, "..", "cotacoes"));
+        if (!Directory.Exists(baseFolder))
+            throw new CustomException("COTACAO_NAO_ENCONTRADA");
 
-        string fileName = $"COTAHIST_D{referenceDate:ddMMyyyy}.TXT";
+        var datesInDb = await _tickerRepository.GetDistinctDatesAsync();
+        var hashedDatesInDb = new HashSet<DateTime>(datesInDb);
 
-        string filePath = Path.Combine(baseFolder, fileName);
+        var files = Directory.GetFiles(baseFolder, "COTAHIST_D*.TXT");
 
-        if (!File.Exists(filePath))
-                throw new CustomException("ARQUIVO_COTAHIST_NAO_ENCONTRADO");
+        foreach (var filePath in files)
+        {
+            var fileName = Path.GetFileName(filePath);
+            if (DateTime.TryParseExact(fileName.Substring(10, 8), "ddMMyyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fileDate))
+            {
+                if (!hashedDatesInDb.Contains(fileDate))
+                {
+                    await ProcessFileAsync(filePath, fileDate);
+                }
+            }
+        }
+    }
+
+    private async Task ProcessFileAsync(string filePath, DateTime fileDate)
+    {
         var encoding = Encoding.GetEncoding("ISO-8859-1");
         var lines = File.ReadLines(filePath, encoding).ToList();
 
-        var firstDataLine = lines.FirstOrDefault(l => l.StartsWith("01"));
-        if (firstDataLine == null) return;
-
-        var fileDate = DateTime.ParseExact(firstDataLine.Substring(2, 8), "yyyyMMdd", CultureInfo.InvariantCulture);
-
         var existingTickersDict = await _tickerRepository.GetTickersByDateDictAsync(fileDate);
-
         var newTickersToInsert = new List<Ticker>();
 
         foreach (var line in lines)
@@ -63,7 +73,7 @@ public class ParserB3CotHist : IParserB3CotHist
     }
 
     private static decimal ParsePrice(string value) =>
-    long.TryParse(value?.Trim(), out var result) 
-        ? decimal.Divide(result, 100) 
-        : decimal.Zero;
+        long.TryParse(value?.Trim(), out var result) 
+            ? decimal.Divide(result, 100) 
+            : decimal.Zero;
 }

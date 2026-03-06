@@ -22,7 +22,12 @@ public class RecommendationBasketService : IRecommendationBasketService
             .Select(dto => new BasketItem(dto.ticker, dto.percentual))
             .ToList();
 
-        
+        var hasDuplicates = basketItens.Select(x => x.Symbol.ToUpper().Trim())
+                             .GroupBy(x => x)
+                             .Any(g => g.Count() > 1);
+
+        if (hasDuplicates)
+            throw new CustomException("TICKER_DUPLICADO_NA_CESTA");
 
         var existingSymbols = new HashSet<string>(await _tickerRepository.GetUniqueSymbols());
         var unknownSymbols = basketItens
@@ -40,9 +45,10 @@ public class RecommendationBasketService : IRecommendationBasketService
 
         var activeBasket = await _recommendationBasketRepository.GetActiveBasketWithItensAsync();
         CestaAnteriorInfo anteriorInfo = null;
-
+        List<string> oldTickers = new();
         if (activeBasket != null)
         {
+            oldTickers = activeBasket?.Itens.Select(i => i.Symbol).ToList() ?? new List<string>();
             activeBasket.Deactivate();
             anteriorInfo = new CestaAnteriorInfo 
             { 
@@ -56,7 +62,7 @@ public class RecommendationBasketService : IRecommendationBasketService
         await _recommendationBasketRepository.SaveChangesAsync();
         bool rebalancingTrigger = await _rebalancingEngineService.ExecuteAsync(RebalancingType.RecommendationChange);
 
-
+        var newTickers = newBasket.Itens.Select(i => i.Symbol).ToList();
         return new CreateBasketResponse
         {
             cestaId = newBasket.Id,
@@ -68,6 +74,8 @@ public class RecommendationBasketService : IRecommendationBasketService
                 ticker = i.Symbol, 
                 percentual = i.Percentage 
             }).ToList(),
+            ativosAdicionados = newTickers.Except(oldTickers).ToList(),
+            ativosRemovidos = oldTickers.Except(newTickers).ToList(),
             rebalanceamentoDisparado = rebalancingTrigger,
             mensagem = activeBasket == null ? "Primeira cesta cadastrada com sucesso." : "Cesta atualizada com sucesso.",
             cestaAnteriorDesativada = anteriorInfo

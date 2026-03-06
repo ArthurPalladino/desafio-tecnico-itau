@@ -5,10 +5,15 @@ public class MasterAccountService : IMasterAccountService
     private readonly ICustomerRepository _customerRepository;
     private readonly ITickerRepository _tickerRepository;
 
-    public MasterAccountService(ICustomerRepository customerRepository, ITickerRepository tickerRepository)
+    private readonly IDistributionRepository _distributionRepository;
+
+    public MasterAccountService(ICustomerRepository customerRepository, 
+    ITickerRepository tickerRepository,
+    IDistributionRepository distributionRepository)
     {
         _customerRepository = customerRepository;
         _tickerRepository = tickerRepository;
+        _distributionRepository = distributionRepository;
     }
     public async Task<MasterCustodyResponse> GetMasterCustodyAsync()
     {
@@ -19,8 +24,17 @@ public class MasterAccountService : IMasterAccountService
 
         var symbols = masterAccount.Custodies.Select(c => c.Symbol).ToList();
         var currentPrices = await _tickerRepository.GetTickersDictBySymbol(symbols);
+        List<Distribution> distributions = new();
+
+        foreach (var custody in masterAccount.Custodies)
+        {
+            var dataResiduo = await _distributionRepository.GetLatestDistributionByTickerAsync(custody.Symbol);
+            distributions.Add(dataResiduo);
+        }
+        
 
         var custodia = masterAccount.Custodies.Select(c => {
+            
             var precoAtual = currentPrices.GetValueOrDefault(c.Symbol)?.CurrentPrice ?? c.AveragePrice;
             return new MasterAssetDto(
                 Ticker: c.Symbol,
@@ -28,7 +42,7 @@ public class MasterAccountService : IMasterAccountService
                 PrecoMedio: c.AveragePrice,
                 ValorAtual: precoAtual,
                 //Origem: c.OriginNote ?? "Resíduo de distribuição",
-                Origem: "Teste"
+                Origem: $"Residuo distribuicao {distributions.FirstOrDefault(d => d.Symbol == c.Symbol)?.DistributedAt.ToString("dd/MM/yyyy") ?? "N/A"}"
             );
         }).ToList();
         string numeroContaMaster = $"MST-{masterAccount.TradingAccount.Id.ToString().PadLeft(6, '0')}";

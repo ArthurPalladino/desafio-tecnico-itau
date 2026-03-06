@@ -23,7 +23,7 @@ public class PurchaseEngineController : ControllerBase
     [HttpPost("executar-compra")]
     public async Task<IActionResult> MotorExecute([FromQuery] DateTime dataReferencia)
     {
-        await _parser.ParseAndSyncDatabaseAsync(dataReferencia); 
+        await _parser.ParseAndSyncDatabaseAsync(); 
         return Ok(await  _purchaseEngine.ExecuteAsync(dataReferencia));
 
     }

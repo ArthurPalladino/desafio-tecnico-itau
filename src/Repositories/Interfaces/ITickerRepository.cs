@@ -9,6 +9,7 @@ namespace Repositories.Interfaces
         Task<Dictionary<string, Ticker>> GetTickersDictByLastDate();
         Task<Dictionary<string, Ticker>> GetTickersDictBySymbol(List<string> symbols);
         Task<Dictionary<string, Ticker>> GetTickersByDateDictAsync(DateTime date);
+        Task<IEnumerable<DateTime>> GetDistinctDatesAsync();
         
     }
 }

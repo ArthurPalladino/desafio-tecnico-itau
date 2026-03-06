@@ -54,4 +54,11 @@ public class TickerRepository(ItauTopFiveDbContext dbContext) : Repository<Ticke
             .Where(t => symbols.Contains(t.Symbol))
             .ToDictionaryAsync(t => t.Symbol, t => t); 
     }
+    public async Task<IEnumerable<DateTime>> GetDistinctDatesAsync()
+    {
+        return await _context.Tickers
+            .Select(t => t.PriceDate)
+            .Distinct()
+            .ToListAsync();
+    }
 }

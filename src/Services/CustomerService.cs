@@ -30,6 +30,10 @@ public class CustomerService : ICustomerService
         var customer = new Customer(request.Nome, request.Cpf, request.Email, request.ValorMensal);
         var tradingAccount = new TradingAccount(customer, AccountType.SubAccount);
 
+        var history = new ContributionHistory(customer,0,request.ValorMensal);
+
+
+        await _historyRepository.AddAsync(history);
         await _customerRepository.AddAsync(customer);
         await _tradingAccountRepository.AddAsync(tradingAccount);
         await _customerRepository.SaveChangesAsync();
@@ -79,17 +83,12 @@ public class CustomerService : ICustomerService
         var odlValue = customer.MonthlyContribution;
 
         if (odlValue == newValue)
-    {
-        throw new CustomException("VALOR_APORTE_IDENTICO");
-    }
-
-        var history = new ContributionHistory
         {
-            CustomerId = customer.Id,
-            OldValue = odlValue, 
-            NewValue = newValue,                     
-            AlterationDate = DateTime.Now            
-        };
+            throw new CustomException("VALOR_APORTE_IDENTICO");
+        }
+
+        var history = new ContributionHistory(customer,odlValue, newValue);
+
 
         await _historyRepository.AddAsync(history);
         customer.UpdateContribution(newValue);
@@ -111,33 +110,49 @@ public class CustomerService : ICustomerService
             throw new CustomException("CLIENTE_NAO_ENCONTRADO");
 
         var account = customer.TradingAccount;
-        decimal valorTotalInvestido = account.Custodies.Sum(x => x.Quantity * x.AveragePrice);
         
-        decimal valorAtualCarteira = account.Custodies.Sum(x => x.Quantity * (x.AveragePrice * 1.05m));
+        var symbols = account.Custodies.Select(c => c.Symbol).ToList();
+        var currentPrices = await _tickerRepository.GetTickersDictBySymbol(symbols);
 
-        var ativos = account.Custodies.Select(x => new AssetDto(
-            x.Symbol,
-            x.Quantity,
-            x.AveragePrice,
-            x.AveragePrice * 1.05m, 
-            x.Quantity * (x.AveragePrice * 1.05m), 
-            (x.AveragePrice * 0.05m) * x.Quantity, 
-            5.00m,
-            valorAtualCarteira > 0 ? ((x.Quantity * (x.AveragePrice * 1.05m)) / valorAtualCarteira) * 100 : 0
-        )).ToList();
+        decimal totalInvestedValue = account.Custodies.Sum(x => x.Quantity * x.AveragePrice);
+        
+        decimal currentPortfolioValue = account.Custodies.Sum(x => {
+            var tickerInfo = currentPrices.GetValueOrDefault(x.Symbol);
+            decimal price = tickerInfo?.CurrentPrice ?? x.AveragePrice;
+            return x.Quantity * price;
+        });
 
+        var assets = account.Custodies.Select(x => {
+            var tickerInfo = currentPrices.GetValueOrDefault(x.Symbol);
+            decimal marketPrice = tickerInfo?.CurrentPrice ?? x.AveragePrice;
+            decimal positionValue = x.Quantity * marketPrice;
+            decimal assetProfitability = x.AveragePrice > 0 
+            ? ((marketPrice / x.AveragePrice) - 1) * 100 
+            : 0;
+
+            return new AssetDto(
+                x.Symbol,
+                x.Quantity,
+                x.AveragePrice,
+                marketPrice, 
+                Math.Round(positionValue,2), 
+                positionValue - (x.Quantity * x.AveragePrice), 
+                assetProfitability, 
+                currentPortfolioValue > 0 ? (positionValue / currentPortfolioValue) * 100 : 0
+            );
+        }).ToList();
         return new PortfolioSummaryResponse(
             customer.Id,
             customer.Name,
             $"FLH-{customer.Id:D6}",
             DateTime.UtcNow,
             new PortfolioMetrics(
-                valorTotalInvestido,
-                valorAtualCarteira,
-                valorAtualCarteira - valorTotalInvestido,
-                valorTotalInvestido > 0 ? ((valorAtualCarteira / valorTotalInvestido) - 1) * 100 : 0
+                totalInvestedValue,
+                currentPortfolioValue,
+                currentPortfolioValue - totalInvestedValue,
+                totalInvestedValue > 0 ? ((currentPortfolioValue / totalInvestedValue) - 1) * 100 : 0
             ),
-            ativos
+            assets
         );
     }
 
@@ -157,6 +172,10 @@ public class CustomerService : ICustomerService
             decimal precoAtual = currentPrices.GetValueOrDefault(x.Symbol)?.CurrentPrice ?? x.AveragePrice;            
             return x.Quantity * precoAtual;
         });
+
+        
+
+
 
         return new PortfolioProfitabilityResponse(
             customer.Id,

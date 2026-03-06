@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 public class ExceptionHandlingMiddleware
@@ -33,11 +34,18 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             context.Response.StatusCode = 500;
-            await context.Response.WriteAsJsonAsync(new 
-            { 
-                erro = ex.InnerException.Message, 
-                codigo = "ERRO_INTERNO" 
-            });
+            context.Response.ContentType = "application/json";
+
+            var response = new
+            {
+                codigo = "ERRO_INTERNO",
+                mensagem = ex.Message,
+                detalhes = ex.InnerException?.Message,
+                stackTrace = ex.StackTrace,
+                origem = ex.Source
+            };
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            await context.Response.WriteAsJsonAsync(response, options);
         }
     }
 }

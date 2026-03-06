@@ -15,10 +15,10 @@ public class Distribution
     protected Distribution() { }
 
     // Construtor para uso durante o processamento (Master ainda sem ID)
-    public Distribution(PurchaseOrder purchaseOrder, int childAccountId, string symbol, int quantity, decimal executionPrice)
+    public Distribution(PurchaseOrder purchaseOrder, int childAccountId, string symbol, int quantity, decimal executionPrice, DateTime distributionDate)
     {
         if (purchaseOrder == null) 
-            throw new CustomException("ORDEM_COMPRA_OBRIGATORIA");
+            throw new CustomException("ORDEM_COMPRA_INVALIDA");
 
         ValidateFields(childAccountId, symbol, quantity, executionPrice);
 
@@ -27,7 +27,7 @@ public class Distribution
         this.Symbol = symbol.Trim().ToUpperInvariant();
         this.Quantity = quantity;
         this.ExecutionPrice = executionPrice;
-        this.DistributedAt = DateTime.Now;
+        this.DistributedAt = distributionDate;
     }
 
     public Distribution(int purchaseOrderId, int childAccountId, string symbol, int quantity, decimal executionPrice)

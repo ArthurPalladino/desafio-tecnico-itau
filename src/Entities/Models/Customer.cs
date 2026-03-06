@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.RegularExpressions;
 
 
 public class Customer
@@ -32,13 +33,16 @@ public class Customer
     {
         cpf = new string(cpf.Where(char.IsDigit).ToArray());
         if (string.IsNullOrWhiteSpace(name))
-            throw new CustomException("NAME_REQUIRED");
+            throw new CustomException("NOME_OBRIGATORIO");
 
         if (!IsValidCpf(cpf))
-            throw new CustomException("INVALID_CPF");
+            throw new CustomException("CPF_INVALIDO");
+        
+        if (!IsValidEmail(email))
+            throw new CustomException("EMAIL_INVALIDO");
 
         if (contribution < 100)
-            throw new CustomException("INVALID_MONTHLY_CONTRIBUTION");
+            throw new CustomException("VALOR_MENSAL_INVALIDO");
 
         Name = name;
         Cpf = cpf;
@@ -47,13 +51,20 @@ public class Customer
         SubscriptionDate = DateTime.Now;
         IsActive = true;
     }
+    public static bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
 
+        string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+        return Regex.IsMatch(email, pattern, RegexOptions.IgnoreCase);
+    }
     private bool IsValidCpf(string cpf)
     {
         if (string.IsNullOrWhiteSpace(cpf)) return false;
 
         cpf = new string(cpf.Where(char.IsDigit).ToArray());
-        if (cpf.Length != 11) return false;
+        if (cpf.Length != 11) throw new CustomException("CPF_INVALIDO_TAMANHO");
         if (cpf.Distinct().Count() == 1) return false;
 
         int sum = 0;

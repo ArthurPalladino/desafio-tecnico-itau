@@ -12,10 +12,13 @@ public static class ErrorCatalog
         { "CLIENTE_JA_INATIVO", new(400, "Cliente ja havia saido do produto.") },
 
         // --- 400 BAD REQUEST (Validações Específicas) ---
+        { "TICKER_DUPLICADO_NA_CESTA", new(400, "A cesta não pode conter tickers duplicados.")},
         { "TICKER_NAO_ENCONTRADO", new(400, "Os seguintes tickers não foram encontrados:") },
         { "VALOR_APORTE_IDENTICO", new(400, "O novo valor de aporte deve ser diferente do valor atual.") },
         { "NOME_OBRIGATORIO", new(400, "O nome é obrigatório.") },
-        { "CPF_INVALIDO", new(400, "CPF inválido. O campo deve conter exatamente 11 dígitos numéricos.") },
+        { "CPF_INVALIDO_TAMANHO", new(400, "CPF inválido. O campo deve conter exatamente 11 dígitos numéricos.") },
+        { "CPF_INVALIDO", new(400, "CPF inválido. O CPF fornecido não é um CPF real.") },
+        { "EMAIL_INVALIDO", new(400, "Email inválido. O email fornecido não é válido.") },
         { "TICKER_OBRIGATORIO", new(400, "O símbolo do ativo (ticker) é obrigatório.") },
         { "ID_CLIENTE_INVALIDO", new(400, "O ID do cliente é inválido.") },
         { "ID_CONTA_INVALIDO", new(400, "O ID da conta gráfica é inválido.") },
