@@ -86,9 +86,9 @@ A solução foi submetida a uma bateria de testes focada na **lógica de negóci
 
 ### Cobertura atual de testes
 
-- **Line Coverage:** 84.1%
-- **Branch Coverage:** 73.7%
-- **Method Coverage:** 85.0%
+- **Line Coverage:** 78.8%
+- **Branch Coverage:** 67.85%
+- **Method Coverage:** 79.13%
 
 ---
 

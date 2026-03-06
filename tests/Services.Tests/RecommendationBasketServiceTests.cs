@@ -107,17 +107,24 @@ namespace Tests.Services.Tests
         public async Task GetActiveBasketAsync_ShouldReturnBasket_WhenExists()
         {
             var itens = new List<BasketItem>
-            {
-                new BasketItem("PETR4", 20),
-                new BasketItem("VALE3", 20),
-                new BasketItem("ITUB4", 20),
-                new BasketItem("BBDC4", 20),
-                new BasketItem("ABEV3", 20)
-            };
+    {
+        new BasketItem("PETR4", 20),
+        new BasketItem("VALE3", 20),
+        new BasketItem("ITUB4", 20),
+        new BasketItem("BBDC4", 20),
+        new BasketItem("ABEV3", 20)
+    };
             var basket = new RecommendationBasket("TestBasket", itens);
 
             _basketRepoMock.Setup(x => x.GetActiveBasketWithItensAsync()).ReturnsAsync(basket);
-            _tickerRepoMock.Setup(x => x.GetLatestByTickerAsync(It.IsAny<string>())).ReturnsAsync(new Ticker("PETR4", 10, System.DateTime.Now));
+
+            var tickersDict = itens.ToDictionary(
+                i => i.Symbol,
+                i => new Ticker(i.Symbol, 10, DateTime.Now)
+            );
+
+            _tickerRepoMock.Setup(x => x.GetTickersDictBySymbol(It.IsAny<List<string>>()))
+                           .ReturnsAsync(tickersDict);
 
             var result = await _service.GetActiveBasketAsync();
 

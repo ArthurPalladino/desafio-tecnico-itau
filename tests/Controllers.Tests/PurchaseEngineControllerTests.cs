@@ -19,7 +19,7 @@ namespace Tests.Controllers.Tests
         {
             _parserMock = new Mock<IParserB3CotHist>();
             _engineServiceMock = new Mock<IPurchaseEngineService>();
-            _controller = new PurchaseEngineController(_parserMock.Object, _engineServiceMock.Object);
+            _controller = new PurchaseEngineController(_engineServiceMock.Object);
         }
 
         [Fact]
@@ -48,17 +48,7 @@ namespace Tests.Controllers.Tests
             okResult.StatusCode.Should().Be(200);
         }
 
-        [Fact]
-        public async Task MotorExecute_ShouldThrow_WhenParserFails()
-        {
-            var referDate = new DateTime(2026, 3, 5);
-            
-            _parserMock.Setup(x => x.ParseAndSyncDatabaseAsync()).ThrowsAsync(new CustomException("Arquivo COTAHIST nao encontrado para a data."));
-
-            Func<Task> act = async () => await _controller.MotorExecute(referDate);
-
-            await act.Should().ThrowAsync<CustomException>();
-        }
+        
 
         [Fact]
         public async Task MotorExecute_ShouldThrow_WhenNoActiveCustomers()
