@@ -5,7 +5,7 @@ using Repositories.Interfaces;
 using Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.WebHost.UseUrls("https://localhost:7239");
 //REPOSITÓRIOS
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
@@ -52,9 +52,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        builder => builder.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader());
+        builder => builder
+            .SetIsOriginAllowed(_ => true) 
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials()); 
 });
 
 
