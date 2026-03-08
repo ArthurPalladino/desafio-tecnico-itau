@@ -43,7 +43,7 @@ O projeto foi desenvolvido utilizando a **Layered Architecture** (Arquitetura em
 
 2. **Rodar o projeto**:
    ```bash
-   dotnet restore
+   dotnet restore src
    dotnet run --project src/ItauTopFive.csproj
    ```
    Abra o arquivo dashboard.html para usar a dashboard
